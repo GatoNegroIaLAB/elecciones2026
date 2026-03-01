@@ -13,15 +13,41 @@ from pathlib import Path
 from typing import Optional, Dict, Any, List
 
 
+def _load_env_file_if_present() -> None:
+    """Load a local .env file (skill root) into process env if keys are missing."""
+    script_dir = Path(__file__).resolve().parent
+    env_path = script_dir.parent / '.env'
+
+    if not env_path.exists():
+        return
+
+    try:
+        for raw_line in env_path.read_text(encoding='utf-8').splitlines():
+            line = raw_line.strip()
+            if not line or line.startswith('#') or '=' not in line:
+                continue
+            key, value = line.split('=', 1)
+            key = key.strip()
+            value = value.strip().strip('"').strip("'")
+            if key and key not in os.environ:
+                os.environ[key] = value
+    except Exception:
+        # Keep non-fatal: environment can still come from shell/session
+        pass
+
+
 class N8nClient:
     """n8n API client"""
     
     def __init__(self, base_url: str = None, api_key: str = None):
+        _load_env_file_if_present()
         self.base_url = base_url or os.getenv('N8N_BASE_URL')
         self.api_key = api_key or os.getenv('N8N_API_KEY')
         
         if not self.api_key:
             raise ValueError("N8N_API_KEY not found in environment")
+        if not self.base_url:
+            raise ValueError("N8N_BASE_URL not found in environment")
         
         self.session = requests.Session()
         self.session.headers.update({
