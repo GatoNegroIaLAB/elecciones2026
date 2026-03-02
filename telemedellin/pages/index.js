@@ -9,16 +9,16 @@ import { supabase, getResultados, getControlAvances, getPartidos, enrichResultad
 
 // ── Colores por partido (por código de la Registraduría) ─────────────────────
 const PARTIDO_COLORS = {
-  '00005': '#ef4444', // Pacto Histórico
-  '00028': '#3b82f6', // Conservador
-  '00002': '#f87171', // Liberal
-  '00025': '#22c55e', // Alianza Verde
-  '00020': '#60a5fa', // Centro Democrático
-  '00019': '#f59e0b', // Cambio Radical
-  '00004': '#fbbf24', // Partido de la U
-  '00032': '#a855f7', // Coalición Esperanza
-  '00030': '#6366f1', // MIRA
-  'default': '#94a3b8'
+  '00005': '#00629E',
+  '00028': '#0084B4',
+  '00002': '#0074B1',
+  '00025': '#00A4C2',
+  '00020': '#00B6CD',
+  '00019': '#F1AA41',
+  '00004': '#00629E',
+  '00032': '#0084B4',
+  '00030': '#00A4C2',
+  'default': '#414E57'
 }
 
 const getColor = (cod) => PARTIDO_COLORS[cod] || PARTIDO_COLORS['default']
@@ -29,19 +29,19 @@ const TOTAL_SEATS_SENADO = 108
 const Badge = ({ children, variant = 'fuchsia' }) => (
   <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
     variant === 'fuchsia'
-      ? 'bg-fuchsia-600/20 text-fuchsia-400 border border-fuchsia-500/30'
-      : 'bg-cyan-600/20 text-cyan-400 border border-cyan-500/30'
+      ? 'bg-[#F1AA41]/20 text-[#F1AA41] border border-[#F1AA41]/40'
+      : 'bg-[#0084B4]/20 text-[#00B6CD] border border-[#00A4C2]/40'
   }`}>{children}</span>
 )
 
 const Card = ({ title, subtitle, children, className = '', icon }) => (
-  <div className={`bg-slate-900/50 border border-slate-800 rounded-xl overflow-hidden backdrop-blur-sm ${className}`}>
+  <div className={`bg-[#414E57]/55 border border-[#414E57] rounded-xl overflow-hidden backdrop-blur-sm ${className}`}>
     {(title || icon) && (
-      <div className="px-5 py-4 border-b border-slate-800 flex items-center gap-3">
-        {icon && <span className="text-fuchsia-400">{icon}</span>}
+      <div className="px-5 py-4 border-b border-[#414E57] flex items-center gap-3">
+        {icon && <span className="text-[#F1AA41]">{icon}</span>}
         <div>
-          <h3 className="text-xs font-bold text-slate-200 uppercase tracking-widest">{title}</h3>
-          {subtitle && <p className="text-[10px] text-slate-500 uppercase tracking-widest mt-0.5">{subtitle}</p>}
+          <h3 className="text-xs font-bold text-[#F8F8F7] uppercase tracking-widest">{title}</h3>
+          {subtitle && <p className="text-[10px] text-[#BDB09B] uppercase tracking-widest mt-0.5">{subtitle}</p>}
         </div>
       </div>
     )}
@@ -85,7 +85,7 @@ const Hemiciclo = ({ partidos }) => {
         <rect x="185" y="185" width="30" height="15" rx="2" fill="#334155" />
       </svg>
       <div className="text-center mt-2">
-        <p className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">Configuración del Senado</p>
+        <p className="text-[10px] uppercase font-bold text-[#BDB09B] tracking-widest">Configuración del Senado</p>
         <p className="text-xl font-black text-white tracking-tighter">{TOTAL_SEATS_SENADO} CURULES TOTALES</p>
       </div>
     </div>
@@ -250,38 +250,38 @@ export default function Home() {
         <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=IBM+Plex+Sans:wght@400;600;800&display=swap" rel="stylesheet" />
       </Head>
 
-      <div className="min-h-screen bg-slate-950 text-slate-100 selection:bg-fuchsia-500/30"
+      <div className="min-h-screen bg-[#000000] text-[#F8F8F7] selection:bg-[#F1AA41]/30"
            style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
 
         {/* HEADER */}
-        <header className="sticky top-0 z-50 bg-slate-950/90 backdrop-blur-md border-b border-slate-800 px-4 py-3">
+        <header className="sticky top-0 z-50 bg-[#000000]/90 backdrop-blur-md border-b border-[#414E57] px-4 py-3">
           <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-3">
             <div className="flex items-center gap-4">
-              <div className="bg-white text-slate-950 font-black px-2 py-1 rounded-md text-xl tracking-tighter">TM</div>
+              <div className="bg-white text-[#000000] font-black px-2 py-1 rounded-md text-xl tracking-tighter">TM</div>
               <div>
                 <h1 className="text-base font-bold leading-none">
-                  Elecciones 2026 · <span className="text-cyan-400">Resultados en vivo</span>
+                  Elecciones 2026 · <span className="text-[#00B6CD]">Resultados en vivo</span>
                 </h1>
                 <div className="flex items-center gap-2 mt-1">
-                  <span className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-fuchsia-600/20 text-fuchsia-400 border border-fuchsia-500/30">
-                    <span className={`w-1.5 h-1.5 rounded-full bg-fuchsia-400 ${isLive ? 'animate-pulse-glow' : ''}`} />
+                  <span className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-[#F1AA41]/20 text-[#F1AA41] border border-[#F1AA41]/40">
+                    <span className={`w-1.5 h-1.5 rounded-full bg-[#F1AA41] ${isLive ? 'animate-pulse-glow' : ''}`} />
                     {isLive ? 'EN VIVO' : 'ESPERANDO DATOS'}
                   </span>
-                  <span className="text-[10px] text-slate-500">Fuente: Registraduría Nacional</span>
-                  <span className="text-[10px] text-slate-600">·</span>
-                  <span className="text-[10px] text-slate-500">{lastUpdate.toLocaleTimeString('es-CO')}</span>
+                  <span className="text-[10px] text-[#BDB09B]">Fuente: Registraduría Nacional</span>
+                  <span className="text-[10px] text-[#BDB09B]">·</span>
+                  <span className="text-[10px] text-[#BDB09B]">{lastUpdate.toLocaleTimeString('es-CO')}</span>
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-2">
               {/* Selector de corporación */}
-              <div className="flex gap-1 bg-slate-800 p-1 rounded-lg">
+              <div className="flex gap-1 bg-[#414E57] p-1 rounded-lg">
                 {['SENADO','CAMARA','CONSULTAS'].map(c => (
                   <button
                     key={c}
                     onClick={() => setCorporacion(c)}
                     className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${
-                      corporacion === c ? 'bg-cyan-600 text-white' : 'text-slate-400 hover:text-slate-200'
+                      corporacion === c ? 'bg-[#0084B4] text-white' : 'text-[#BDB09B] hover:text-[#F8F8F7]'
                     }`}
                   >{c}</button>
                 ))}
@@ -289,7 +289,7 @@ export default function Home() {
               <button
                 onClick={fetchData}
                 disabled={loading}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-cyan-600 text-[11px] font-bold hover:bg-cyan-500 transition-colors disabled:opacity-50"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#0084B4] text-[11px] font-bold hover:bg-[#00A4C2] transition-colors disabled:opacity-50"
               >
                 <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
                 ACTUALIZAR
@@ -302,33 +302,33 @@ export default function Home() {
 
           {/* KPIs */}
           <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Card className="border-l-4 border-l-fuchsia-500">
-              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Escrutado</p>
+            <Card className="border-l-4 border-l-[#F1AA41]">
+              <p className="text-[10px] text-[#BDB09B] font-bold uppercase tracking-widest">Escrutado</p>
               <h2 className="text-3xl font-black text-white mt-1 tabular-nums">{pctMesas.toFixed(2)}%</h2>
-              <p className="text-[11px] text-slate-500 mt-1">
+              <p className="text-[11px] text-[#BDB09B] mt-1">
                 {(statsNac.mesas_informadas || 0).toLocaleString('es-CO')} mesas informadas
               </p>
             </Card>
-            <Card className="border-l-4 border-l-cyan-500">
-              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Votos Válidos</p>
+            <Card className="border-l-4 border-l-[#00B6CD]">
+              <p className="text-[10px] text-[#BDB09B] font-bold uppercase tracking-widest">Votos Válidos</p>
               <h2 className="text-3xl font-black text-white mt-1 tabular-nums">
                 {totalVotos > 0 ? (totalVotos / 1_000_000).toFixed(2) + 'M' : '—'}
               </h2>
-              <p className="text-[11px] text-slate-500 mt-1">Nacional</p>
+              <p className="text-[11px] text-[#BDB09B] mt-1">Nacional</p>
             </Card>
-            <Card className="border-l-4 border-l-slate-500">
-              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Participación</p>
+            <Card className="border-l-4 border-l-[#414E57]">
+              <p className="text-[10px] text-[#BDB09B] font-bold uppercase tracking-widest">Participación</p>
               <h2 className="text-3xl font-black text-white mt-1 tabular-nums">{pctParticipacion}%</h2>
-              <p className="text-[11px] text-slate-500 mt-1">
+              <p className="text-[11px] text-[#BDB09B] mt-1">
                 Avance {ctrlCorp?.ultimo_avance_num ?? '—'}
               </p>
             </Card>
             <Card className="border-l-4 border-l-yellow-500">
-              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Líder</p>
+              <p className="text-[10px] text-[#BDB09B] font-bold uppercase tracking-widest">Líder</p>
               <h2 className="text-base font-black text-white mt-1 leading-tight truncate">
                 {leader?.nombre_partido || (loading ? 'Cargando...' : 'Sin datos')}
               </h2>
-              <p className="text-[11px] text-slate-500 mt-1">
+              <p className="text-[11px] text-[#BDB09B] mt-1">
                 {leader?.curules ? `${leader.curules} curules` : leader ? `${(leader.votos_partido||0).toLocaleString('es-CO')} votos` : '—'}
               </p>
             </Card>
@@ -336,11 +336,11 @@ export default function Home() {
 
           {/* SEÑAL EN VIVO */}
           <section>
-            <Card className="p-0 border-cyan-500/30 overflow-hidden shadow-[0_0_30px_rgba(6,182,212,0.07)]">
-              <div className="bg-slate-800/50 px-4 py-2 flex items-center justify-between">
+            <Card className="p-0 border-[#00A4C2]/40 overflow-hidden shadow-[0_0_30px_rgba(6,182,212,0.07)]">
+              <div className="bg-[#414E57]/50 px-4 py-2 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Play size={14} className="text-cyan-400 fill-cyan-400" />
-                  <span className="text-[10px] font-black uppercase text-slate-300 tracking-widest">Señal en Vivo: Telemedellín</span>
+                  <Play size={14} className="text-[#00B6CD] fill-[#00B6CD]" />
+                  <span className="text-[10px] font-black uppercase text-[#F8F8F7] tracking-widest">Señal en Vivo: Telemedellín</span>
                 </div>
                 <Badge variant="fuchsia">Live HD</Badge>
               </div>
@@ -363,23 +363,23 @@ export default function Home() {
               <Card title={`Ranking de Listas — ${corporacion}`}>
                 <div className="flex flex-col sm:flex-row gap-3 mb-6">
                   <div className="relative flex-1">
-                    <Search className="absolute left-3 top-2.5 text-slate-500" size={15} />
+                    <Search className="absolute left-3 top-2.5 text-[#BDB09B]" size={15} />
                     <input
                       type="text"
                       placeholder="Buscar partido..."
                       value={searchTerm}
                       onChange={e => setSearchTerm(e.target.value)}
-                      className="w-full bg-slate-800 border border-slate-700 rounded-lg pl-9 pr-3 py-2 text-sm outline-none focus:ring-1 focus:ring-cyan-500"
+                      className="w-full bg-[#414E57] border border-[#414E57] rounded-lg pl-9 pr-3 py-2 text-sm outline-none focus:ring-1 focus:ring-[#00A4C2]"
                     />
                   </div>
                 </div>
 
                 {loading ? (
-                  <div className="flex items-center justify-center h-40 text-slate-500 text-sm">
+                  <div className="flex items-center justify-center h-40 text-[#BDB09B] text-sm">
                     Cargando resultados...
                   </div>
                 ) : resFiltrado.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-40 text-slate-500 text-sm gap-2">
+                  <div className="flex flex-col items-center justify-center h-40 text-[#BDB09B] text-sm gap-2">
                     <span>Sin datos disponibles</span>
                     <span className="text-xs">Los datos aparecerán cuando inicie el conteo</span>
                   </div>
@@ -392,13 +392,13 @@ export default function Home() {
                       return (
                         <div key={item.cod_partido} className="space-y-1.5">
                           <div className="flex justify-between text-xs font-medium">
-                            <span className="text-slate-200">{idx + 1}. {item.nombre_partido}</span>
-                            <span className="text-slate-400 tabular-nums">
+                            <span className="text-[#F8F8F7]">{idx + 1}. {item.nombre_partido}</span>
+                            <span className="text-[#BDB09B] tabular-nums">
                               {(item.votos_partido || 0).toLocaleString('es-CO')} votos
                               {item.curules != null ? ` · ${item.curules} cur.` : ''}
                             </span>
                           </div>
-                          <div className="h-3 bg-slate-800 rounded-full overflow-hidden">
+                          <div className="h-3 bg-[#414E57] rounded-full overflow-hidden">
                             <div
                               className="h-full rounded-full transition-all duration-1000"
                               style={{ width: `${pct}%`, backgroundColor: getColor(item.cod_partido) }}
@@ -414,20 +414,20 @@ export default function Home() {
 
             <div className="lg:col-span-5 space-y-6">
               {/* BRIEF IA */}
-              <div className="bg-gradient-to-br from-fuchsia-600 to-cyan-600 p-[1px] rounded-xl">
-                <div className="bg-slate-900 rounded-xl overflow-hidden">
+              <div className="bg-gradient-to-br from-[#00629E] to-[#00A4C2] p-[1px] rounded-xl">
+                <div className="bg-[#414E57] rounded-xl overflow-hidden">
                   <div className="px-4 py-3 border-b border-white/5 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Zap size={15} className="text-fuchsia-400" />
+                      <Zap size={15} className="text-[#F1AA41]" />
                       <h3 className="text-xs font-bold text-white uppercase tracking-widest">Brief IA</h3>
                     </div>
                     <div className="flex gap-1">
-                      <button onClick={() => speak(briefText)} className="p-1.5 hover:bg-white/10 rounded-md text-slate-400"><Volume2 size={15} /></button>
-                      <button onClick={() => navigator.clipboard?.writeText(briefText)} className="p-1.5 hover:bg-white/10 rounded-md text-slate-400"><Copy size={15} /></button>
+                      <button onClick={() => speak(briefText)} className="p-1.5 hover:bg-white/10 rounded-md text-[#BDB09B]"><Volume2 size={15} /></button>
+                      <button onClick={() => navigator.clipboard?.writeText(briefText)} className="p-1.5 hover:bg-white/10 rounded-md text-[#BDB09B]"><Copy size={15} /></button>
                     </div>
                   </div>
                   <div className="p-4">
-                    <p className="text-sm leading-relaxed text-slate-300 italic">"{briefText}"</p>
+                    <p className="text-sm leading-relaxed text-[#F8F8F7] italic">"{briefText}"</p>
                   </div>
                 </div>
               </div>
@@ -440,8 +440,8 @@ export default function Home() {
                       <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                         <div className={`max-w-[85%] rounded-xl px-3 py-2 text-xs leading-relaxed ${
                           m.role === 'user'
-                            ? 'bg-cyan-600 text-white'
-                            : 'bg-slate-800 text-slate-200 border border-slate-700'
+                            ? 'bg-[#0084B4] text-white'
+                            : 'bg-[#414E57] text-[#F8F8F7] border border-[#414E57]'
                         }`}>{m.text}</div>
                       </div>
                     ))}
@@ -452,9 +452,9 @@ export default function Home() {
                       placeholder="¿Quién va primero? ¿Cuántas mesas?..."
                       value={inputValue}
                       onChange={e => setInputValue(e.target.value)}
-                      className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs outline-none focus:ring-1 focus:ring-cyan-500"
+                      className="flex-1 bg-[#414E57] border border-[#414E57] rounded-lg px-3 py-2 text-xs outline-none focus:ring-1 focus:ring-[#00A4C2]"
                     />
-                    <button type="submit" className="p-2 bg-fuchsia-600 rounded-lg hover:bg-fuchsia-500 transition-colors">
+                    <button type="submit" className="p-2 bg-[#F1AA41] rounded-lg hover:bg-[#F1AA41]/90 transition-colors">
                       <Send size={15} />
                     </button>
                   </form>
@@ -467,36 +467,36 @@ export default function Home() {
           {corporacion === 'SENADO' && (
             <section>
               <Card>
-                <div className="flex flex-col md:flex-row items-center justify-between mb-6 border-b border-slate-800 pb-4">
+                <div className="flex flex-col md:flex-row items-center justify-between mb-6 border-b border-[#414E57] pb-4">
                   <div className="flex items-center gap-3">
-                    <LayoutGrid className="text-fuchsia-400" size={20} />
+                    <LayoutGrid className="text-[#F1AA41]" size={20} />
                     <div>
                       <h3 className="font-bold text-base text-white">CONFORMACIÓN DEL SENADO</h3>
-                      <p className="text-[10px] text-slate-500 uppercase tracking-widest">Distribución de Escaños — Cifra Repartidora</p>
+                      <p className="text-[10px] text-[#BDB09B] uppercase tracking-widest">Distribución de Escaños — Cifra Repartidora</p>
                     </div>
                   </div>
-                  <div className="mt-3 md:mt-0 flex gap-1 bg-slate-800 p-1 rounded-lg">
-                    <button onClick={() => setTableMode('grafico')} className={`px-4 py-1.5 text-[10px] rounded-md font-bold transition-all ${tableMode==='grafico' ? 'bg-slate-700 text-cyan-400' : 'text-slate-500'}`}>GRÁFICO</button>
-                    <button onClick={() => setTableMode('tabla')} className={`px-4 py-1.5 text-[10px] rounded-md font-bold transition-all ${tableMode==='tabla' ? 'bg-slate-700 text-cyan-400' : 'text-slate-500'}`}>TABLA</button>
+                  <div className="mt-3 md:mt-0 flex gap-1 bg-[#414E57] p-1 rounded-lg">
+                    <button onClick={() => setTableMode('grafico')} className={`px-4 py-1.5 text-[10px] rounded-md font-bold transition-all ${tableMode==='grafico' ? 'bg-[#00629E] text-[#00B6CD]' : 'text-[#BDB09B]'}`}>GRÁFICO</button>
+                    <button onClick={() => setTableMode('tabla')} className={`px-4 py-1.5 text-[10px] rounded-md font-bold transition-all ${tableMode==='tabla' ? 'bg-[#00629E] text-[#00B6CD]' : 'text-[#BDB09B]'}`}>TABLA</button>
                   </div>
                 </div>
 
                 {tableMode === 'grafico' ? (
                   loading || !resConCurules.length ? (
-                    <div className="flex items-center justify-center h-60 text-slate-500 text-sm">
+                    <div className="flex items-center justify-center h-60 text-[#BDB09B] text-sm">
                       {loading ? 'Calculando curules...' : 'Sin datos para mostrar el hemiciclo'}
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-                      <div className="lg:col-span-7 bg-slate-950/30 rounded-2xl border border-slate-800/50">
+                      <div className="lg:col-span-7 bg-[#000000]/30 rounded-2xl border border-[#414E57]/50">
                         <Hemiciclo partidos={resConCurules} />
                       </div>
                       <div className="lg:col-span-5 grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {[...resConCurules].sort((a,b)=>b.curules-a.curules).map(p => (
-                          <div key={p.cod_partido} className="flex items-center justify-between p-3 bg-slate-900/80 border border-slate-800 rounded-xl">
+                          <div key={p.cod_partido} className="flex items-center justify-between p-3 bg-[#414E57]/80 border border-[#414E57] rounded-xl">
                             <div className="flex items-center gap-2">
                               <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: getColor(p.cod_partido) }} />
-                              <p className="text-[11px] font-semibold text-slate-200 truncate max-w-[90px]">{p.nombre_partido}</p>
+                              <p className="text-[11px] font-semibold text-[#F8F8F7] truncate max-w-[90px]">{p.nombre_partido}</p>
                             </div>
                             <span className="text-base font-black text-white tabular-nums">{p.curules || 0}</span>
                           </div>
@@ -508,7 +508,7 @@ export default function Home() {
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse text-sm">
                       <thead>
-                        <tr className="border-b border-slate-800 text-[10px] text-slate-500 uppercase font-bold">
+                        <tr className="border-b border-[#414E57] text-[10px] text-[#BDB09B] uppercase font-bold">
                           <th className="px-4 py-3">#</th>
                           <th className="px-4 py-3">Partido</th>
                           <th className="px-4 py-3 text-right">Votos</th>
@@ -518,19 +518,19 @@ export default function Home() {
                       </thead>
                       <tbody>
                         {[...resConCurules].sort((a,b)=>b.curules-a.curules).map((p, i) => (
-                          <tr key={p.cod_partido} className="border-b border-slate-900/50 hover:bg-slate-800/30 transition-colors">
-                            <td className="px-4 py-3 text-slate-500">{i+1}</td>
+                          <tr key={p.cod_partido} className="border-b border-[#414E57]/50 hover:bg-[#414E57]/30 transition-colors">
+                            <td className="px-4 py-3 text-[#BDB09B]">{i+1}</td>
                             <td className="px-4 py-3 font-semibold flex items-center gap-2">
                               <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: getColor(p.cod_partido) }} />
                               {p.nombre_partido}
                             </td>
-                            <td className="px-4 py-3 text-right tabular-nums text-slate-300">
+                            <td className="px-4 py-3 text-right tabular-nums text-[#F8F8F7]">
                               {(p.votos_partido||0).toLocaleString('es-CO')}
                             </td>
-                            <td className="px-4 py-3 text-right tabular-nums text-slate-400">
+                            <td className="px-4 py-3 text-right tabular-nums text-[#BDB09B]">
                               {totalVotos ? ((p.votos_partido/totalVotos)*100).toFixed(2) : '0.00'}%
                             </td>
-                            <td className="px-4 py-3 text-right font-black text-cyan-400 text-base tabular-nums">
+                            <td className="px-4 py-3 text-right font-black text-[#00B6CD] text-base tabular-nums">
                               {p.curules || 0}
                             </td>
                           </tr>
@@ -551,30 +551,30 @@ export default function Home() {
               </div>
               <div>
                 <h3 className="font-bold text-base text-white">MONITOR DE SENTIMIENTO (IA)</h3>
-                <p className="text-[10px] text-slate-500 uppercase tracking-widest">Análisis de Percepción en Redes Sociales</p>
+                <p className="text-[10px] text-[#BDB09B] uppercase tracking-widest">Análisis de Percepción en Redes Sociales</p>
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {['instagram','twitter'].map(tipo => (
-                <div key={tipo} className={`bg-slate-900/50 border rounded-xl p-5 ${tipo==='instagram' ? 'border-fuchsia-500/20' : 'border-cyan-500/20'}`}>
+                <div key={tipo} className={`bg-[#414E57]/55 border rounded-xl p-5 ${tipo==='instagram' ? 'border-[#F1AA41]/30' : 'border-[#00A4C2]/30'}`}>
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg ${tipo==='instagram' ? 'bg-fuchsia-500/10' : 'bg-cyan-500/10'}`}>
+                      <div className={`p-2 rounded-lg ${tipo==='instagram' ? 'bg-[#F1AA41]/10' : 'bg-[#00A4C2]/10'}`}>
                         {tipo==='instagram'
-                          ? <Instagram size={18} className="text-fuchsia-400" />
-                          : <Twitter size={18} className="text-cyan-400" />}
+                          ? <Instagram size={18} className="text-[#F1AA41]" />
+                          : <Twitter size={18} className="text-[#00B6CD]" />}
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-slate-200 capitalize">{tipo} Analytics</p>
-                        <p className="text-[10px] text-slate-500 uppercase tracking-widest">Próximamente</p>
+                        <p className="text-sm font-bold text-[#F8F8F7] capitalize">{tipo} Analytics</p>
+                        <p className="text-[10px] text-[#BDB09B] uppercase tracking-widest">Próximamente</p>
                       </div>
                     </div>
                     <Badge variant={tipo==='instagram' ? 'fuchsia' : 'cyan'}>IA Monitor</Badge>
                   </div>
-                  <div className="h-2 bg-slate-800 rounded-full overflow-hidden mb-3">
-                    <div className="h-full bg-slate-700 rounded-full animate-pulse" style={{ width: '60%' }} />
+                  <div className="h-2 bg-[#414E57] rounded-full overflow-hidden mb-3">
+                    <div className="h-full bg-[#00629E] rounded-full animate-pulse" style={{ width: '60%' }} />
                   </div>
-                  <p className="text-xs text-slate-500 italic">El monitor de sentimiento estará disponible durante el día de elecciones.</p>
+                  <p className="text-xs text-[#BDB09B] italic">El monitor de sentimiento estará disponible durante el día de elecciones.</p>
                 </div>
               ))}
             </div>
@@ -582,11 +582,11 @@ export default function Home() {
 
         </main>
 
-        <footer className="max-w-7xl mx-auto px-4 py-8 text-center border-t border-slate-800/50">
-          <p className="text-[10px] uppercase font-bold tracking-widest text-slate-600">
+        <footer className="max-w-7xl mx-auto px-4 py-8 text-center border-t border-[#414E57]/50">
+          <p className="text-[10px] uppercase font-bold tracking-widest text-[#BDB09B]">
             Telemedellín Digital · Centro de Mando Electoral 2026
           </p>
-          <p className="text-[10px] text-slate-700 mt-1">
+          <p className="text-[10px] text-[#BDB09B] mt-1">
             Datos oficiales: Registraduría Nacional del Estado Civil
           </p>
         </footer>

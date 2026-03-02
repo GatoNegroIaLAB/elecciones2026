@@ -16,7 +16,7 @@ body {
 }
 
 .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #414E57; border-radius: 10px; }
 
 @keyframes pulse-glow {
   0%, 100% { opacity: 1; }
