@@ -126,6 +126,25 @@ export default function Home() {
   const [tableMode, setTableMode]       = useState('grafico')
   const [isLive, setIsLive]             = useState(false)
 
+  useEffect(() => {
+    const sendHeight = () => {
+      const h = Math.max(
+        document.documentElement?.scrollHeight || 0,
+        document.body?.scrollHeight || 0
+      )
+      window.parent?.postMessage({ type: 'tm-elecciones-height', height: h }, '*')
+    }
+
+    sendHeight()
+    window.addEventListener('resize', sendHeight)
+    const id = setInterval(sendHeight, 1000)
+
+    return () => {
+      window.removeEventListener('resize', sendHeight)
+      clearInterval(id)
+    }
+  }, [])
+
   const fetchData = useCallback(async () => {
     try {
       setLoading(true)
