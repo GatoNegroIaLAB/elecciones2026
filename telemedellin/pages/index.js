@@ -250,8 +250,8 @@ export default function Home() {
         <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=IBM+Plex+Sans:wght@400;600;800&display=swap" rel="stylesheet" />
       </Head>
 
-      <div className="min-h-screen bg-[#000000] text-[#F8F8F7] selection:bg-[#F1AA41]/30"
-           style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+      <div className="min-h-screen text-[#F8F8F7] selection:bg-[#F1AA41]/30"
+           style={{ fontFamily: "'IBM Plex Sans', sans-serif", backgroundColor: 'transparent' }}>
 
         {/* HEADER */}
         <header className="sticky top-0 z-50 bg-[#000000]/90 backdrop-blur-md border-b border-[#414E57] px-4 py-3">
