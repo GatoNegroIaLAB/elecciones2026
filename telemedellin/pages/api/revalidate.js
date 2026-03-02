@@ -3,7 +3,6 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  // Validar token de seguridad
   const token = req.headers['x-revalidate-token']
   if (token !== process.env.REVALIDATE_TOKEN) {
     return res.status(401).json({ error: 'Invalid token' })
@@ -11,15 +10,13 @@ export default async function handler(req, res) {
 
   const { corporacion, avance } = req.body || {}
 
-  try {
-    await res.revalidate('/')
-    return res.status(200).json({ 
-      revalidated: true, 
-      corporacion,
-      avance,
-      now: Date.now() 
-    })
-  } catch (err) {
-    return res.status(500).json({ error: err.message })
-  }
+  // No usar res.revalidate() — causa error en Vercel con apps SPA
+  // La app refresca datos automáticamente via Supabase Realtime
+  return res.status(200).json({
+    ok: true,
+    message: 'Notificación recibida. App refresca via Supabase Realtime.',
+    corporacion,
+    avance,
+    now: Date.now()
+  })
 }
