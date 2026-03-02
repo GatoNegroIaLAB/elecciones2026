@@ -146,14 +146,23 @@ export default function Home() {
     }
   }, [corporacion])
 
+  const LIVE_MODE = false // Cambiar a true el día del simulacro y elecciones
+
   useEffect(() => {
+    if (!LIVE_MODE) {
+      fetchData() // carga datos una sola vez
+      return
+    }
+
     fetchData()
-    const interval = setInterval(fetchData, 60000) // refresca cada 60s
+    const interval = setInterval(fetchData, 60000)
     return () => clearInterval(interval)
   }, [fetchData])
 
   // Suscripción en tiempo real vía Supabase Realtime
   useEffect(() => {
+    if (!LIVE_MODE) return
+
     const channel = supabase
       .channel('avances')
       .on('postgres_changes', {
@@ -163,6 +172,7 @@ export default function Home() {
         filter: `corporacion=eq.${corporacion}`
       }, () => fetchData())
       .subscribe()
+
     return () => supabase.removeChannel(channel)
   }, [corporacion, fetchData])
 
