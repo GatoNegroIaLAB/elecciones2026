@@ -286,11 +286,7 @@ export default function Home() {
         <header className="sticky top-0 z-50 bg-[#000000]/90 backdrop-blur-md border-b border-[#414E57] px-4 py-3">
           <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-3">
             <div className="flex items-center gap-4">
-              <img
-                src="/images/logo-colombia.jpg"
-                alt="Colombia"
-                className="h-10 w-auto rounded-md bg-white/90 p-1"
-              />
+
               <div>
                 <h1 className="text-base font-bold leading-none">
                   Elecciones 2026 · <span className="text-[#00B6CD]">Resultados en vivo</span>
