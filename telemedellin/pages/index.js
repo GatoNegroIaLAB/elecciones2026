@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import Head from 'next/head'
 import {
-  Play, RefreshCw, Send, Volume2, Copy, ChevronRight,
+  Play, Send, Volume2, Copy, ChevronRight,
   Search, LayoutGrid, Zap, Activity, Smile, Meh, Frown,
   Instagram, Twitter, Table as TableIcon, BarChart3
 } from 'lucide-react'
@@ -319,14 +319,6 @@ export default function Home() {
                   >{c}</button>
                 ))}
               </div>
-              <button
-                onClick={fetchData}
-                disabled={loading}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#0084B4] text-[11px] font-bold hover:bg-[#00A4C2] transition-colors disabled:opacity-50"
-              >
-                <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-                ACTUALIZAR
-              </button>
             </div>
           </div>
         </header>
