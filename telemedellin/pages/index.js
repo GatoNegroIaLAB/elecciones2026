@@ -296,9 +296,13 @@ export default function Home() {
                     <span className={`w-1.5 h-1.5 rounded-full bg-[#F1AA41] ${isLive ? 'animate-pulse-glow' : ''}`} />
                     {isLive ? 'EN VIVO' : 'ESPERANDO DATOS'}
                   </span>
-                  <span className="text-[10px] text-[#BDB09B]">Fuente: Registraduría Nacional</span>
-                  <span className="text-[10px] text-[#BDB09B]">·</span>
-                  <span className="text-[10px] text-[#BDB09B]">{lastUpdate.toLocaleTimeString('es-CO')}</span>
+                  <span className="px-2.5 py-1 rounded-md text-[10px] font-extrabold tracking-wide uppercase bg-[#F1AA41]/15 text-[#F8F8F7] border border-[#F1AA41]/50">
+                    Registraduría Nacional
+                  </span>
+                  <span className="text-[10px] text-[#F1AA41] font-bold">·</span>
+                  <span className="px-2 py-1 rounded-md text-[10px] font-bold bg-[#00629E]/35 text-[#F8F8F7] border border-[#00A4C2]/40">
+                    Hora: {lastUpdate.toLocaleTimeString('es-CO')}
+                  </span>
                 </div>
               </div>
             </div>
