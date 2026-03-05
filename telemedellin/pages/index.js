@@ -507,17 +507,17 @@ export default function Home() {
                 </div>
 
                 {tableMode === 'grafico' ? (
-                  loading || !resConCurules.length ? (
-                    <div className="flex items-center justify-center h-60 text-[#BDB09B] text-sm">
-                      {loading ? 'Calculando curules...' : 'Sin datos para mostrar el hemiciclo'}
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+                    <div className="lg:col-span-7 bg-[#000000]/30 rounded-2xl border border-[#414E57]/50">
+                      <Hemiciclo partidos={resConCurules || []} />
                     </div>
-                  ) : (
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-                      <div className="lg:col-span-7 bg-[#000000]/30 rounded-2xl border border-[#414E57]/50">
-                        <Hemiciclo partidos={resConCurules} />
-                      </div>
-                      <div className="lg:col-span-5 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {[...resConCurules].sort((a,b)=>b.curules-a.curules).map(p => (
+                    <div className="lg:col-span-5 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {!resConCurules.length ? (
+                        <div className="col-span-2 flex items-center justify-center h-32 text-[#BDB09B] text-sm border border-[#414E57] rounded-xl bg-[#414E57]/40">
+                          {loading ? 'Calculando curules...' : 'Sin datos aún, mostrando hemiciclo base'}
+                        </div>
+                      ) : (
+                        [...resConCurules].sort((a,b)=>b.curules-a.curules).map(p => (
                           <div key={p.cod_partido} className="flex items-center justify-between p-3 bg-[#414E57]/80 border border-[#414E57] rounded-xl">
                             <div className="flex items-center gap-2">
                               <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: getColor(p.cod_partido) }} />
@@ -525,10 +525,10 @@ export default function Home() {
                             </div>
                             <span className="text-base font-black text-white tabular-nums">{p.curules || 0}</span>
                           </div>
-                        ))}
-                      </div>
+                        ))
+                      )}
                     </div>
-                  )
+                  </div>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse text-sm">
