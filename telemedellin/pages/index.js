@@ -659,7 +659,7 @@ export default function Home() {
 
         <footer className="max-w-7xl mx-auto px-4 py-8 text-center border-t border-[#414E57]/50">
           <p className="text-[10px] uppercase font-bold tracking-widest text-[#BDB09B]">
-            Telemedellín Digital · Centro de Mando Electoral 2026
+            Telemedellín Digital · Centro Digital Electoral 2026
           </p>
           <p className="text-[10px] text-[#BDB09B] mt-1">
             Datos oficiales: Registraduría Nacional del Estado Civil
