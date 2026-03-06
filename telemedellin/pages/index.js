@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import Head from 'next/head'
 import {
   Play, Send, Volume2, Copy, ChevronRight,
-  Search, LayoutGrid, Zap, Activity, Smile, Meh, Frown,
+  Search, LayoutGrid, Zap, Activity, Cloud,
   Instagram, Twitter, Table as TableIcon, BarChart3
 } from 'lucide-react'
 import { supabase, getResultados, getControlAvances, getPartidos, enrichResultados } from '../lib/supabase'
@@ -125,6 +125,30 @@ export default function Home() {
   const [inputValue, setInputValue]     = useState('')
   const [tableMode, setTableMode]       = useState('grafico')
   const [isLive, setIsLive]             = useState(false)
+  const [palabrasInstagram, setPalabrasInstagram] = useState([])
+  const [palabrasTwitter, setPalabrasTwitter]     = useState([])
+
+  const fetchPalabras = useCallback(async () => {
+    try {
+      const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
+      const SUPA_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      const headers  = { apikey: SUPA_KEY, Authorization: `Bearer ${SUPA_KEY}` }
+      const [igRes, twRes] = await Promise.all([
+        fetch(`${SUPA_URL}/rest/v1/palabras_nube?fuente=eq.instagram&activa=eq.true&order=frecuencia.desc&limit=60&select=palabra,frecuencia`, { headers }),
+        fetch(`${SUPA_URL}/rest/v1/palabras_nube?fuente=eq.twitter&activa=eq.true&order=frecuencia.desc&limit=60&select=palabra,frecuencia`, { headers })
+      ])
+      const ig = await igRes.json()
+      const tw = await twRes.json()
+      if (Array.isArray(ig)) setPalabrasInstagram(ig)
+      if (Array.isArray(tw)) setPalabrasTwitter(tw)
+    } catch(e) { console.error('Error fetching palabras:', e) }
+  }, [])
+
+  useEffect(() => {
+    fetchPalabras()
+    const interval = setInterval(fetchPalabras, 60000)
+    return () => clearInterval(interval)
+  }, [fetchPalabras])
 
   useEffect(() => {
     const sendHeight = () => {
@@ -568,38 +592,64 @@ export default function Home() {
             </section>
           )}
 
-          {/* MONITOR DE SENTIMIENTO — placeholder visual */}
+          {/* CONVERSACIÓN EN REDES — nube de palabras */}
           <section className="pb-10">
             <div className="flex items-center gap-3 mb-5">
-              <div className="p-2 bg-emerald-500/10 rounded-lg">
-                <Activity className="text-emerald-400" size={18} />
+              <div className="p-2 bg-[#F1AA41]/10 rounded-lg">
+                <Cloud className="text-[#F1AA41]" size={18} />
               </div>
               <div>
-                <h3 className="font-bold text-base text-white">MONITOR DE SENTIMIENTO (IA)</h3>
-                <p className="text-[10px] text-[#BDB09B] uppercase tracking-widest">Análisis de Percepción en Redes Sociales</p>
+                <h3 className="font-bold text-base text-white">CONVERSACIÓN EN REDES</h3>
+                <p className="text-[10px] text-[#BDB09B] uppercase tracking-widest">Palabras más mencionadas en Instagram y X</p>
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {['instagram','twitter'].map(tipo => (
-                <div key={tipo} className={`bg-[#414E57]/55 border rounded-xl p-5 ${tipo==='instagram' ? 'border-[#F1AA41]/30' : 'border-[#00A4C2]/30'}`}>
+              {[
+                { tipo: 'instagram', palabras: palabrasInstagram, color: '#F1AA41', borderColor: 'border-[#F1AA41]/30', bgColor: 'bg-[#F1AA41]/10', label: 'Instagram' },
+                { tipo: 'twitter',   palabras: palabrasTwitter,   color: '#00B6CD', borderColor: 'border-[#00A4C2]/30', bgColor: 'bg-[#00A4C2]/10', label: 'X (Twitter)' }
+              ].map(({ tipo, palabras, color, borderColor, bgColor, label }) => (
+                <div key={tipo} className={`bg-[#414E57]/55 border rounded-xl p-5 ${borderColor}`}>
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg ${tipo==='instagram' ? 'bg-[#F1AA41]/10' : 'bg-[#00A4C2]/10'}`}>
-                        {tipo==='instagram'
+                      <div className={`p-2 rounded-lg ${bgColor}`}>
+                        {tipo === 'instagram'
                           ? <Instagram size={18} className="text-[#F1AA41]" />
                           : <Twitter size={18} className="text-[#00B6CD]" />}
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-[#F8F8F7] capitalize">{tipo} Analytics</p>
-                        <p className="text-[10px] text-[#BDB09B] uppercase tracking-widest">Próximamente</p>
+                        <p className="text-sm font-bold text-[#F8F8F7]">{label}</p>
+                        <p className="text-[10px] text-[#BDB09B] uppercase tracking-widest">{palabras.length} palabras trending</p>
                       </div>
                     </div>
-                    <Badge variant={tipo==='instagram' ? 'fuchsia' : 'cyan'}>IA Monitor</Badge>
+                    <Badge variant={tipo === 'instagram' ? 'fuchsia' : 'cyan'}>En vivo</Badge>
                   </div>
-                  <div className="h-2 bg-[#414E57] rounded-full overflow-hidden mb-3">
-                    <div className="h-full bg-[#00629E] rounded-full animate-pulse" style={{ width: '60%' }} />
-                  </div>
-                  <p className="text-xs text-[#BDB09B] italic">El monitor de sentimiento estará disponible durante el día de elecciones.</p>
+                  {palabras.length === 0 ? (
+                    <div className="flex items-center justify-center h-40 text-[#BDB09B]">
+                      <p className="text-xs uppercase tracking-widest">Sin datos aún...</p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-2 justify-center items-center min-h-[160px] p-2">
+                      {palabras.map((item, i) => {
+                        const colors = tipo === 'instagram'
+                          ? ['#F1AA41','#F5C06A','#E8940F','#FDD78A','#D4820A','#FAC84E','#C97A00','#FFE0A0']
+                          : ['#00B6CD','#00A4C2','#22d3ee','#67e8f9','#0891b2','#a5f3fc','#0e7490','#06b6d4'];
+                        const maxFreq = Math.max(...palabras.map(p => p.frecuencia));
+                        const minFreq = Math.min(...palabras.map(p => p.frecuencia));
+                        const normalized = maxFreq === minFreq ? 0.5 : (item.frecuencia - minFreq) / (maxFreq - minFreq);
+                        const fontSize = Math.round(10 + normalized * 26);
+                        return (
+                          <span
+                            key={item.palabra}
+                            style={{ fontSize: `${fontSize}px`, color: colors[i % colors.length] }}
+                            className="font-bold leading-tight hover:opacity-70 transition-opacity cursor-default select-none"
+                            title={`${item.palabra}: ${item.frecuencia} menciones`}
+                          >
+                            {item.palabra}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
