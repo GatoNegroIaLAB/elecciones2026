@@ -189,7 +189,7 @@ export default function Home() {
     }
   }, [corporacion])
 
-  const LIVE_MODE = false // Cambiar a true el día del simulacro y elecciones
+  const LIVE_MODE = true // Activado para simulacro y elecciones
 
   useEffect(() => {
     if (!LIVE_MODE) {
