@@ -50,7 +50,7 @@ export async function getControlAvances() {
 export async function getPartidos() {
   const { data, error } = await supabase
     .from('cat_partidos')
-    .select('codigo, nombre')
+    .select('codigo, nombre, color_hex')
 
   if (error) throw error
   return data || []
