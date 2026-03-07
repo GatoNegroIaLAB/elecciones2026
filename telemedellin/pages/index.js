@@ -7,21 +7,7 @@ import {
 } from 'lucide-react'
 import { supabase, getResultados, getControlAvances, getPartidos, enrichResultados } from '../lib/supabase'
 
-// ── Colores por partido (por código de la Registraduría) ─────────────────────
-const PARTIDO_COLORS = {
-  '00005': '#00629E',
-  '00028': '#0084B4',
-  '00002': '#0074B1',
-  '00025': '#00A4C2',
-  '00020': '#00B6CD',
-  '00019': '#F1AA41',
-  '00004': '#00629E',
-  '00032': '#0084B4',
-  '00030': '#00A4C2',
-  'default': '#414E57'
-}
-
-const getColor = (cod) => PARTIDO_COLORS[cod] || PARTIDO_COLORS['default']
+const DEFAULT_COLOR = '#414E57'
 
 const TOTAL_SEATS_SENADO = 108
 
@@ -50,7 +36,7 @@ const Card = ({ title, subtitle, children, className = '', icon }) => (
 )
 
 // ── Hemiciclo ─────────────────────────────────────────────────────────────────
-const Hemiciclo = ({ partidos }) => {
+const Hemiciclo = ({ partidos, getColor }) => {
   const seatsPerRow = [14, 18, 22, 26, 28]
   const seatColors = []
   partidos.forEach(p => {
@@ -115,6 +101,17 @@ export default function Home() {
   const [corporacion, setCorporacion]   = useState('SENADO')
   const [resultados, setResultados]     = useState([])
   const [partidos, setPartidos]         = useState([])
+
+  const getColor = useCallback((cod) => {
+    const partido = partidos.find(p => p.codigo === cod)
+    return partido?.color_hex || DEFAULT_COLOR
+  }, [partidos])
+
+  const getNombre = useCallback((cod) => {
+    const partido = partidos.find(p => p.codigo === cod)
+    return partido?.nombre || cod
+  }, [partidos])
+
   const [control, setControl]           = useState([])
   const [loading, setLoading]           = useState(true)
   const [lastUpdate, setLastUpdate]     = useState(new Date())
@@ -237,9 +234,9 @@ export default function Home() {
 
   const resFiltrado = useMemo(() =>
     resOrdenado.filter(r =>
-      r.nombre_partido?.toLowerCase().includes(searchTerm.toLowerCase())
+      getNombre(r.cod_partido).toLowerCase().includes(searchTerm.toLowerCase())
     ).slice(0, 12),
-    [resOrdenado, searchTerm]
+    [resOrdenado, searchTerm, getNombre]
   )
 
   const ctrlCorp = control.find(c => c.corporacion === corporacion)
@@ -259,8 +256,8 @@ export default function Home() {
   const briefText = useMemo(() => {
     if (!leader) return 'Esperando datos de la Registraduría...'
     const curules = leader.curules ? ` con ${leader.curules} curules proyectadas` : ''
-    return `Análisis: En ${corporacion}, ${leader.nombre_partido} lidera${curules} con ${(leader.votos_partido || 0).toLocaleString('es-CO')} votos. El escrutinio avanza al ${pctMesas.toFixed(2)}% de mesas informadas.`
-  }, [leader, corporacion, pctMesas])
+    return `Análisis: En ${corporacion}, ${getNombre(leader.cod_partido)} lidera${curules} con ${(leader.votos_partido || 0).toLocaleString('es-CO')} votos. El escrutinio avanza al ${pctMesas.toFixed(2)}% de mesas informadas.`
+  }, [leader, corporacion, pctMesas, getNombre])
 
   const speak = (text) => {
     if (!window.speechSynthesis) return
@@ -281,14 +278,14 @@ export default function Home() {
       const ql = q.toLowerCase()
       if (ql.includes('lider') || ql.includes('líder') || ql.includes('primero')) {
         resp = leader
-          ? `${leader.nombre_partido} lidera con ${(leader.votos_partido||0).toLocaleString('es-CO')} votos.`
+          ? `${getNombre(leader.cod_partido)} lidera con ${(leader.votos_partido||0).toLocaleString('es-CO')} votos.`
           : 'Aún no hay datos disponibles.'
       } else if (ql.includes('mesas')) {
         resp = `Se han informado ${statsNac.mesas_informadas?.toLocaleString('es-CO') || '—'} de ${statsNac.mesas_instaladas?.toLocaleString('es-CO') || '—'} mesas (${pctMesas.toFixed(1)}%).`
       } else if (ql.includes('votos') || ql.includes('total')) {
         resp = `Total de votos válidos: ${totalVotos.toLocaleString('es-CO')}.`
       } else {
-        resp = `En ${corporacion}, ${leader?.nombre_partido || '—'} lidera con ${(leader?.votos_partido||0).toLocaleString('es-CO')} votos. Escrutinio al ${pctMesas.toFixed(1)}%.`
+        resp = `En ${corporacion}, ${leader ? getNombre(leader.cod_partido) : '—'} lidera con ${(leader?.votos_partido||0).toLocaleString('es-CO')} votos. Escrutinio al ${pctMesas.toFixed(1)}%.`
       }
       setMessages(prev => [...prev, { role: 'assistant', text: resp }])
       speak(resp)
@@ -375,7 +372,7 @@ export default function Home() {
             <Card className="border-l-4 border-l-yellow-500">
               <p className="text-[10px] text-[#BDB09B] font-bold uppercase tracking-widest">Líder</p>
               <h2 className="text-base font-black text-white mt-1 leading-tight truncate">
-                {leader?.nombre_partido || (loading ? 'Cargando...' : 'Sin datos')}
+                {leader ? getNombre(leader.cod_partido) : (loading ? 'Cargando...' : 'Sin datos')}
               </h2>
               <p className="text-[11px] text-[#BDB09B] mt-1">
                 {leader?.curules ? `${leader.curules} curules` : leader ? `${(leader.votos_partido||0).toLocaleString('es-CO')} votos` : '—'}
@@ -441,7 +438,7 @@ export default function Home() {
                       return (
                         <div key={item.cod_partido} className="space-y-1.5">
                           <div className="flex justify-between text-xs font-medium">
-                            <span className="text-[#F8F8F7]">{idx + 1}. {item.nombre_partido}</span>
+                            <span className="text-[#F8F8F7]">{idx + 1}. {getNombre(item.cod_partido)}</span>
                             <span className="text-[#BDB09B] tabular-nums">
                               {(item.votos_partido || 0).toLocaleString('es-CO')} votos
                               {item.curules != null ? ` · ${item.curules} cur.` : ''}
@@ -533,7 +530,7 @@ export default function Home() {
                 {tableMode === 'grafico' ? (
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
                     <div className="lg:col-span-7 bg-[#000000]/30 rounded-2xl border border-[#414E57]/50">
-                      <Hemiciclo partidos={resConCurules || []} />
+                      <Hemiciclo partidos={resConCurules || []} getColor={getColor} />
                     </div>
                     <div className="lg:col-span-5 grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {!resConCurules.length ? (
@@ -545,7 +542,7 @@ export default function Home() {
                           <div key={p.cod_partido} className="flex items-center justify-between p-3 bg-[#414E57]/80 border border-[#414E57] rounded-xl">
                             <div className="flex items-center gap-2">
                               <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: getColor(p.cod_partido) }} />
-                              <p className="text-[11px] font-semibold text-[#F8F8F7] truncate max-w-[90px]">{p.nombre_partido}</p>
+                              <p className="text-[11px] font-semibold text-[#F8F8F7] truncate max-w-[90px]">{getNombre(p.cod_partido)}</p>
                             </div>
                             <span className="text-base font-black text-white tabular-nums">{p.curules || 0}</span>
                           </div>
@@ -571,7 +568,7 @@ export default function Home() {
                             <td className="px-4 py-3 text-[#BDB09B]">{i+1}</td>
                             <td className="px-4 py-3 font-semibold flex items-center gap-2">
                               <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: getColor(p.cod_partido) }} />
-                              {p.nombre_partido}
+                              {getNombre(p.cod_partido)}
                             </td>
                             <td className="px-4 py-3 text-right tabular-nums text-[#F8F8F7]">
                               {(p.votos_partido||0).toLocaleString('es-CO')}
