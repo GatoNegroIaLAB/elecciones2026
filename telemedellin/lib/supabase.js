@@ -7,6 +7,16 @@ export const supabase = createClient(supabaseUrl, supabaseKey)
 
 // ── Leer resultados por corporación ──────────────────────────────────────────
 export async function getResultados(corporacion = 'SENADO') {
+  // Primero obtenemos el último avance disponible
+  const { data: ctrl } = await supabase
+    .from('control_avances')
+    .select('ultimo_avance_num')
+    .eq('corporacion', corporacion)
+    .single()
+
+  const ultimoAvance = ctrl?.ultimo_avance_num ?? 0
+
+  // Luego traemos solo los registros de ese avance
   const { data, error } = await supabase
     .from('avances_resultados')
     .select(`
@@ -19,6 +29,7 @@ export async function getResultados(corporacion = 'SENADO') {
     `)
     .eq('corporacion', corporacion)
     .eq('tipo_boletin', 'NACIONAL')
+    .eq('num_avance', ultimoAvance)
     .order('votos_partido', { ascending: false })
 
   if (error) throw error
