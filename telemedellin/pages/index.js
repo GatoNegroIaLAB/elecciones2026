@@ -189,7 +189,7 @@ export default function Home() {
     }
   }, [corporacion])
 
-  const LIVE_MODE = false // Desactivado fuera de simulacro/elecciones
+  const LIVE_MODE = true // Activado para simulacro/elecciones
 
   useEffect(() => {
     if (!LIVE_MODE) {
