@@ -99,6 +99,7 @@ function calcularCurules(resultados, totalCurules) {
 // ── Página principal ──────────────────────────────────────────────────────────
 export default function Home() {
   const [corporacion, setCorporacion]   = useState('SENADO')
+  const [circunscripcion, setCircunscripcion] = useState('TERRITORIAL')
   const [resultados, setResultados]     = useState([])
   const [partidos, setPartidos]         = useState([])
 
@@ -186,6 +187,10 @@ export default function Home() {
     }
   }, [corporacion])
 
+  useEffect(() => {
+    if (corporacion === 'CAMARA') setCircunscripcion('TERRITORIAL')
+  }, [corporacion])
+
   const LIVE_MODE = true // Activado para simulacro/elecciones
 
   useEffect(() => {
@@ -217,15 +222,22 @@ export default function Home() {
   }, [corporacion, fetchData])
 
   // ── Datos procesados ────────────────────────────────────────────────────────
-  const resNacional = useMemo(() =>
-    resultados.filter(r => r.tipo_boletin === 'NACIONAL'),
-    [resultados]
+  const resNacional = useMemo(() => {
+    const todos = resultados.filter(r => r.tipo_boletin === 'NACIONAL')
+    if (corporacion !== 'CAMARA') return todos
+    return todos.filter(r => r.circunscripcion === circunscripcion)
+  }, [resultados, corporacion, circunscripcion])
+
+  const resNacionalTop10 = useMemo(() =>
+    corporacion === 'CAMARA' ? resNacional.slice(0, 10) : resNacional,
+    [resNacional, corporacion]
   )
 
   const resConCurules = useMemo(() => {
-    if (corporacion !== 'SENADO' || !resNacional.length) return resNacional
+    const base = corporacion === 'CAMARA' ? resNacionalTop10 : resNacional
+    if (corporacion !== 'SENADO' || !resNacional.length) return base
     return calcularCurules(resNacional, TOTAL_SEATS_SENADO)
-  }, [resNacional, corporacion])
+  }, [resNacional, resNacionalTop10, corporacion])
 
   const resOrdenado = useMemo(() =>
     [...resConCurules].sort((a, b) => b.votos_partido - a.votos_partido),
@@ -340,6 +352,23 @@ export default function Home() {
                   >{c}</button>
                 ))}
               </div>
+              {corporacion === 'CAMARA' && (
+                <div className="flex gap-1 bg-[#414E57] p-1 rounded-lg">
+                  {[
+                    { key: 'TERRITORIAL', label: 'Territorial' },
+                    { key: 'INDIGENAS', label: 'Indígenas' },
+                    { key: 'AFRO', label: 'Afro' },
+                  ].map(({ key, label }) => (
+                    <button
+                      key={key}
+                      onClick={() => setCircunscripcion(key)}
+                      className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${
+                        circunscripcion === key ? 'bg-[#0084B4] text-white' : 'text-[#BDB09B] hover:text-[#F8F8F7]'
+                      }`}
+                    >{label}</button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </header>
