@@ -96,65 +96,6 @@ function calcularCurules(resultados, totalCurules) {
   return partidos.map(p => ({ ...p, curules: curules[p.cod_partido] || 0 }))
 }
 
-// ── Sección de Consultas ──────────────────────────────────────────────────────
-const CONSULTAS_DEF = [
-  { cod: '00100', label: 'Consulta de las Soluciones', color: '#F1AA41' },
-  { cod: '00200', label: 'La Gran Consulta por Colombia', color: '#00A4C2' },
-  { cod: '00300', label: 'Frente por la Vida', color: '#A42EFF' },
-]
-
-const ConsultasSection = ({ resultados, candidatos, loading }) => (
-  <section>
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      {CONSULTAS_DEF.map(({ cod, label, color }) => {
-        const cands = resultados
-          .filter(r => r.cod_partido === cod && r.cod_candidato !== '000')
-          .sort((a, b) => b.votos_partido - a.votos_partido)
-        const totalConsulta = cands.reduce((s, c) => s + (c.votos_partido || 0), 0)
-        const stats = resultados.find(r => r.cod_partido === cod) || {}
-        return (
-          <div key={cod} className="bg-[#414E57]/55 border border-[#414E57] rounded-xl overflow-hidden backdrop-blur-sm">
-            <div className="px-4 py-3 border-b border-[#414E57]" style={{ borderLeftColor: color, borderLeftWidth: 4 }}>
-              <p className="text-[10px] font-bold text-[#BDB09B] uppercase tracking-widest">Consulta</p>
-              <h3 className="text-xs font-black text-white mt-0.5 leading-tight">{label}</h3>
-              <p className="text-[10px] text-[#BDB09B] mt-1">
-                {stats.porc_mesas ? `${parseFloat(stats.porc_mesas).toFixed(1)}% mesas` : '—'}
-                {' · '}{totalConsulta.toLocaleString('es-CO')} votos
-              </p>
-            </div>
-            <div className="p-4 space-y-3">
-              {loading ? (
-                <p className="text-[#BDB09B] text-xs text-center py-4">Cargando...</p>
-              ) : cands.length === 0 ? (
-                <p className="text-[#BDB09B] text-xs text-center py-4">Sin datos aún</p>
-              ) : cands.map((c, idx) => {
-                const cand = candidatos.find(x => x.cod_partido === cod && x.cod_candidato === c.cod_candidato)
-                const nombre = cand ? `${cand.nombre} ${cand.apellido}` : `Candidato ${c.cod_candidato}`
-                const pct = totalConsulta > 0 ? (c.votos_partido / totalConsulta) * 100 : 0
-                return (
-                  <div key={c.cod_candidato} className="space-y-1">
-                    <div className="flex justify-between text-xs">
-                      <span className="text-[#F8F8F7] font-medium truncate max-w-[60%]">{idx + 1}. {nombre}</span>
-                      <span className="text-[#BDB09B] tabular-nums">{pct.toFixed(1)}%</span>
-                    </div>
-                    <div className="h-2 bg-[#1e293b] rounded-full overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all duration-1000"
-                        style={{ width: `${pct}%`, backgroundColor: color }}
-                      />
-                    </div>
-                    <p className="text-[10px] text-[#BDB09B]">{(c.votos_partido || 0).toLocaleString('es-CO')} votos</p>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        )
-      })}
-    </div>
-  </section>
-)
-
 // ── Página principal ──────────────────────────────────────────────────────────
 export default function Home() {
   const [corporacion, setCorporacion]   = useState('SENADO')
@@ -182,6 +123,7 @@ export default function Home() {
   const [tableMode, setTableMode]       = useState('grafico')
   const [isLive, setIsLive]             = useState(false)
   const [candidatos, setCandidatos] = useState([])
+  const [circunscripcion, setCircunscripcion] = useState('TERRITORIAL')
   const [resConsultas, setResConsultas] = useState([])
   const [palabrasInstagram, setPalabrasInstagram] = useState([])
   const [palabrasTwitter, setPalabrasTwitter]     = useState([])
@@ -282,10 +224,11 @@ export default function Home() {
   }, [corporacion, fetchData])
 
   // ── Datos procesados ────────────────────────────────────────────────────────
-  const resNacional = useMemo(() =>
-    resultados.filter(r => r.tipo_boletin === 'NACIONAL'),
-    [resultados]
-  )
+  const resNacional = useMemo(() => {
+    const todos = resultados.filter(r => r.tipo_boletin === 'NACIONAL')
+    if (corporacion !== 'CAMARA') return todos
+    return todos.filter(r => r.circunscripcion === circunscripcion)
+  }, [resultados, corporacion, circunscripcion])
 
   const resConCurules = useMemo(() => {
     if (corporacion !== 'SENADO' || !resNacional.length) return resNacional
@@ -405,6 +348,20 @@ export default function Home() {
                   >{c}</button>
                 ))}
               </div>
+              {corporacion === 'CAMARA' && (
+                <div className="flex gap-1 bg-[#414E57] p-1 rounded-lg">
+                  {[
+                    { key: 'TERRITORIAL', label: 'Territorial' },
+                    { key: 'INDIGENAS',   label: 'Indígenas' },
+                    { key: 'AFRO',        label: 'Afro' },
+                  ].map(({ key, label }) => (
+                    <button key={key} onClick={() => setCircunscripcion(key)}
+                      className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${
+                        circunscripcion === key ? 'bg-[#0084B4] text-white' : 'text-[#BDB09B] hover:text-[#F8F8F7]'
+                      }`}>{label}</button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </header>
