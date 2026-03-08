@@ -517,7 +517,7 @@ export default function Home() {
                   <div className="flex items-center gap-3">
                     <LayoutGrid className="text-[#F1AA41]" size={20} />
                     <div>
-                      <h3 className="font-bold text-base text-white">CONFORMACIÓN DEL SENADO</h3>
+                      <h3 className="font-bold text-base text-white">POSIBLE CONFORMACIÓN DEL SENADO</h3>
                       <p className="text-[10px] text-[#BDB09B] uppercase tracking-widest">Distribución de Escaños — Cifra Repartidora</p>
                     </div>
                   </div>
