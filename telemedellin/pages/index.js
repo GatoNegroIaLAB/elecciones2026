@@ -176,7 +176,7 @@ export default function Home() {
   const [lastUpdate, setLastUpdate]     = useState(new Date())
   const [searchTerm, setSearchTerm]     = useState('')
   const [messages, setMessages]         = useState([
-    { role: 'assistant', text: 'Hola, soy tu asistente de datos. ¿Qué quieres saber sobre los resultados?' }
+    { role: 'assistant', text: '¡Hola! Soy tu asistente de datos electorales. Puedes preguntarme, por ejemplo: “¿Quién va de primero?”, “¿Cómo va el escrutinio de mesas?” o “¿Cuál es el total de votos válidos?”.' }
   ])
   const [inputValue, setInputValue]     = useState('')
   const [tableMode, setTableMode]       = useState('grafico')
@@ -334,6 +334,12 @@ export default function Home() {
     window.speechSynthesis.speak(u)
   }
 
+  const normalizeText = (text = '') =>
+    text
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+
   const handleSend = (e) => {
     e.preventDefault()
     if (!inputValue.trim()) return
@@ -342,18 +348,28 @@ export default function Home() {
     setInputValue('')
     setTimeout(() => {
       let resp = ''
-      const ql = q.toLowerCase()
-      if (ql.includes('lider') || ql.includes('líder') || ql.includes('primero')) {
+      const ql = normalizeText(q)
+
+      const leaderKeywords = ['lider', 'primero', 'puntero', 'encabeza', 'ganando', 'top', 'primera fuerza']
+      const mesasKeywords = ['mesas', 'escrutinio', 'avance', 'conteo', 'porcentaje', 'reportadas', 'informadas']
+      const votosKeywords = ['votos', 'votacion', 'sufragios', 'total', 'votaron', 'voto']
+
+      const hasLeaderIntent = leaderKeywords.some(k => ql.includes(k))
+      const hasMesasIntent = mesasKeywords.some(k => ql.includes(k))
+      const hasVotosIntent = votosKeywords.some(k => ql.includes(k))
+
+      if (hasLeaderIntent) {
         resp = leader
-          ? `${getNombre(leader.cod_partido)} lidera con ${(leader.votos_partido||0).toLocaleString('es-CO')} votos.`
+          ? `${getNombre(leader.cod_partido)} lidera con ${(leader.votos_partido || 0).toLocaleString('es-CO')} votos.`
           : 'Aún no hay datos disponibles.'
-      } else if (ql.includes('mesas')) {
+      } else if (hasMesasIntent) {
         resp = `Se han informado ${statsNac.mesas_informadas?.toLocaleString('es-CO') || '—'} de ${statsNac.mesas_instaladas?.toLocaleString('es-CO') || '—'} mesas (${pctMesas.toFixed(1)}%).`
-      } else if (ql.includes('votos') || ql.includes('total')) {
+      } else if (hasVotosIntent) {
         resp = `Total de votos válidos: ${totalVotos.toLocaleString('es-CO')}.`
       } else {
-        resp = `En ${corporacion}, ${leader ? getNombre(leader.cod_partido) : '—'} lidera con ${(leader?.votos_partido||0).toLocaleString('es-CO')} votos. Escrutinio al ${pctMesas.toFixed(1)}%.`
+        resp = 'No te entendí del todo. Prueba con preguntas como: “¿Quién va de primero?”, “¿Cómo va el escrutinio de mesas?” o “¿Cuál es el total de votos válidos?”.'
       }
+
       setMessages(prev => [...prev, { role: 'assistant', text: resp }])
       speak(resp)
     }, 500)
