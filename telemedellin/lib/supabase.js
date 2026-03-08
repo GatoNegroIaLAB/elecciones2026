@@ -17,7 +17,7 @@ export async function getResultados(corporacion = 'SENADO') {
   const ultimoAvance = ctrl?.ultimo_avance_num ?? 0
 
   // Luego traemos solo los registros de ese avance
-  const { data, error } = await supabase
+  let query = supabase
     .from('avances_resultados')
     .select(`
       corporacion, num_avance, tipo_boletin, circunscripcion,
@@ -32,6 +32,14 @@ export async function getResultados(corporacion = 'SENADO') {
     .eq('num_avance', ultimoAvance)
     .order('votos_partido', { ascending: false })
 
+  // Cámara: mostrar Antioquia por defecto
+  if (corporacion === 'CAMARA') {
+    query = query.eq('cod_dpto', '01')
+  } else {
+    query = query.eq('cod_dpto', '00')
+  }
+
+  const { data, error } = await query
   if (error) throw error
   return data || []
 }
@@ -64,4 +72,16 @@ export function enrichResultados(resultados, partidos) {
     ...r,
     nombre_partido: partidosMap[r.cod_partido] || `Partido ${r.cod_partido}`
   }))
+}
+
+// ── Leer catálogo de candidatos (consultas) ───────────────────────────────────
+export async function getCandidatos() {
+  const { data, error } = await supabase
+    .from('cat_candidatos')
+    .select('cod_partido, cod_candidato, nombre, apellido')
+    .in('cod_partido', ['00100', '00200', '00300'])
+    .neq('cod_candidato', '000')
+
+  if (error) throw error
+  return data || []
 }
