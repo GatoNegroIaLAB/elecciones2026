@@ -7,7 +7,6 @@ export const supabase = createClient(supabaseUrl, supabaseKey)
 
 // ── Leer resultados por corporación ──────────────────────────────────────────
 export async function getResultados(corporacion = 'SENADO') {
-  // Primero obtenemos el último avance disponible
   const { data: ctrl } = await supabase
     .from('control_avances')
     .select('ultimo_avance_num')
@@ -16,11 +15,10 @@ export async function getResultados(corporacion = 'SENADO') {
 
   const ultimoAvance = ctrl?.ultimo_avance_num ?? 0
 
-  // Luego traemos solo los registros de ese avance
-  const { data, error } = await supabase
+  let query = supabase
     .from('avances_resultados')
     .select(`
-      corporacion, num_avance, tipo_boletin,
+      corporacion, num_avance, tipo_boletin, circunscripcion,
       cod_dpto, nombre_dpto, cod_municipio, nombre_municipio,
       cod_partido, votos_partido, porc_partido,
       mesas_instaladas, mesas_informadas, porc_mesas,
@@ -32,6 +30,14 @@ export async function getResultados(corporacion = 'SENADO') {
     .eq('num_avance', ultimoAvance)
     .order('votos_partido', { ascending: false })
 
+  // Cámara: mostrar Antioquia por defecto
+  if (corporacion === 'CAMARA') {
+    query = query.eq('cod_dpto', '01')
+  } else {
+    query = query.eq('cod_dpto', '00')
+  }
+
+  const { data, error } = await query
   if (error) throw error
   return data || []
 }
