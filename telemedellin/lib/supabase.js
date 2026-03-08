@@ -1,73 +1,87 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl  = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseKey  = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
 export const supabase = createClient(supabaseUrl, supabaseKey)
 
 // ── Leer resultados por corporación ──────────────────────────────────────────
 export async function getResultados(corporacion = 'SENADO') {
-  const { data: ctrl } = await supabase
-    .from('control_avances')
-    .select('ultimo_avance_num')
-    .eq('corporacion', corporacion)
-    .single()
+ // Primero obtenemos el último avance disponible
+ const { data: ctrl } = await supabase
+ .from('control_avances')
+ .select('ultimo_avance_num')
+ .eq('corporacion', corporacion)
+ .single()
 
-  const ultimoAvance = ctrl?.ultimo_avance_num ?? 0
+ const ultimoAvance = ctrl?.ultimo_avance_num ?? 0
 
-  let query = supabase
-    .from('avances_resultados')
-    .select(`
-      corporacion, num_avance, tipo_boletin, circunscripcion,
-      cod_dpto, nombre_dpto, cod_municipio, nombre_municipio,
-      cod_partido, votos_partido, porc_partido,
-      mesas_instaladas, mesas_informadas, porc_mesas,
-      potencial_sufragantes, total_sufragantes, votos_validos,
-      votos_nulos, votos_no_marcados
-    `)
-    .eq('corporacion', corporacion)
-    .eq('tipo_boletin', 'NACIONAL')
-    .eq('num_avance', ultimoAvance)
-    .order('votos_partido', { ascending: false })
+ // Luego traemos solo los registros de ese avance
+ let query = supabase
+ .from('avances_resultados')
+ .select(`
+ corporacion, num_avance, tipo_boletin, circunscripcion,
+ cod_dpto, nombre_dpto, cod_municipio, nombre_municipio,
+ cod_partido, votos_partido, porc_partido,
+ mesas_instaladas, mesas_informadas, porc_mesas,
+ potencial_sufragantes, total_sufragantes, votos_validos,
+ votos_nulos, votos_no_marcados
+ `)
+ .eq('corporacion', corporacion)
+ .eq('tipo_boletin', 'NACIONAL')
+ .eq('num_avance', ultimoAvance)
+ .order('votos_partido', { ascending: false })
 
-  // Cámara: mostrar Antioquia por defecto
-  if (corporacion === 'CAMARA') {
-    query = query.eq('cod_dpto', '01')
-  } else {
-    query = query.eq('cod_dpto', '00')
-  }
+ // Cámara: mostrar Antioquia por defecto
+ if (corporacion === 'CAMARA') {
+ query = query.eq('cod_dpto', '01')
+ } else {
+ query = query.eq('cod_dpto', '00')
+ }
 
-  const { data, error } = await query
-  if (error) throw error
-  return data || []
+ const { data, error } = await query
+ if (error) throw error
+ return data || []
 }
 
 // ── Leer control de avances ───────────────────────────────────────────────────
 export async function getControlAvances() {
-  const { data, error } = await supabase
-    .from('control_avances')
-    .select('corporacion, ultimo_avance_num, ultima_actualizacion')
+ const { data, error } = await supabase
+ .from('control_avances')
+ .select('corporacion, ultimo_avance_num, ultima_actualizacion')
 
-  if (error) throw error
-  return data || []
+ if (error) throw error
+ return data || []
 }
 
 // ── Leer catálogo de partidos ─────────────────────────────────────────────────
 export async function getPartidos() {
-  const { data, error } = await supabase
-    .from('cat_partidos')
-    .select('codigo, nombre, color_hex')
+ const { data, error } = await supabase
+ .from('cat_partidos')
+ .select('codigo, nombre, color_hex')
 
-  if (error) throw error
-  return data || []
+ if (error) throw error
+ return data || []
 }
 
 // ── Combinar resultados con nombres de partidos ───────────────────────────────
 export function enrichResultados(resultados, partidos) {
-  const partidosMap = {}
-  partidos.forEach(p => { partidosMap[p.codigo] = p.nombre })
-  return resultados.map(r => ({
-    ...r,
-    nombre_partido: partidosMap[r.cod_partido] || `Partido ${r.cod_partido}`
-  }))
+ const partidosMap = {}
+ partidos.forEach(p => { partidosMap[p.codigo] = p.nombre })
+ return resultados.map(r => ({
+ ...r,
+ nombre_partido: partidosMap[r.cod_partido] || `Partido ${r.cod_partido}`
+ }))
+}
+
+// ── Leer catálogo de candidatos (consultas) ───────────────────────────────────
+export async function getCandidatos() {
+ const { data, error } = await supabase
+ .from('cat_candidatos')
+ .select('cod_partido, cod_candidato, nombre, apellido')
+ .in('cod_partido', ['00100', '00200', '00300'])
+ .neq('cod_candidato', '000')
+
+ if (error) throw error
+ return data || []
 }
