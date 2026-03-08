@@ -466,7 +466,7 @@ export default function Home() {
  })()}
 
  {/* RANKING + IA */}
- {corporacion !== 'CONSULTAS' && <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+ {corporacion !== 'CONSULTAS' && (<div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
  <div className="lg:col-span-7 space-y-6">
  <Card title={`Ranking de Listas — ${corporacion}`}>
  <div className="flex flex-col sm:flex-row gap-3 mb-6">
@@ -569,9 +569,7 @@ export default function Home() {
  </div>
  </Card>
  </div>
- </div>
-
- }
+ </div>)}
 
  {/* HEMICICLO — solo para Senado */}
  {corporacion === 'SENADO' && (
