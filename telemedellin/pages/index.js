@@ -123,6 +123,7 @@ export default function Home() {
   const [tableMode, setTableMode]       = useState('grafico')
   const [isLive, setIsLive]             = useState(false)
   const [candidatos, setCandidatos] = useState([])
+  const [circunscripcion, setCircunscripcion] = useState('TERRITORIAL')
   const [palabrasInstagram, setPalabrasInstagram] = useState([])
   const [palabrasTwitter, setPalabrasTwitter]     = useState([])
 
@@ -220,10 +221,11 @@ export default function Home() {
   }, [corporacion, fetchData])
 
   // ── Datos procesados ────────────────────────────────────────────────────────
-  const resNacional = useMemo(() =>
-    resultados.filter(r => r.tipo_boletin === 'NACIONAL'),
-    [resultados]
-  )
+  const resNacional = useMemo(() => {
+    const todos = resultados.filter(r => r.tipo_boletin === 'NACIONAL')
+    if (corporacion !== 'CAMARA') return todos
+    return todos.filter(r => r.circunscripcion === circunscripcion)
+  }, [resultados, corporacion, circunscripcion])
 
   const resConCurules = useMemo(() => {
     if (corporacion !== 'SENADO' || !resNacional.length) return resNacional
@@ -343,6 +345,20 @@ export default function Home() {
                   >{c}</button>
                 ))}
               </div>
+              {corporacion === 'CAMARA' && (
+                <div className="flex gap-1 bg-[#414E57] p-1 rounded-lg mt-1">
+                  {[
+                    { key: 'TERRITORIAL', label: 'Territorial' },
+                    { key: 'INDIGENAS', label: 'Indígenas' },
+                    { key: 'AFRO', label: 'Afro' },
+                  ].map(({ key, label }) => (
+                    <button key={key} onClick={() => setCircunscripcion(key)}
+                      className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${
+                        circunscripcion === key ? 'bg-[#0084B4] text-white' : 'text-[#BDB09B] hover:text-[#F8F8F7]'
+                      }`}>{label}</button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </header>
@@ -466,7 +482,7 @@ export default function Home() {
           })()}
 
           {/* RANKING + IA */}
-          {corporacion !== 'CONSULTAS' && <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {corporacion !== 'CONSULTAS' && (<div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <div className="lg:col-span-7 space-y-6">
               <Card title={`Ranking de Listas — ${corporacion}`}>
                 <div className="flex flex-col sm:flex-row gap-3 mb-6">
@@ -569,9 +585,7 @@ export default function Home() {
                 </div>
               </Card>
             </div>
-          </div>
-
-          }
+          </div>)}
 
           {/* HEMICICLO — solo para Senado */}
           {corporacion === 'SENADO' && (
