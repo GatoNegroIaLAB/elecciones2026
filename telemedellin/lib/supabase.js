@@ -22,7 +22,7 @@ export async function getResultados(corporacion = 'SENADO') {
     .select(`
       corporacion, num_avance, tipo_boletin, circunscripcion,
       cod_dpto, nombre_dpto, cod_municipio, nombre_municipio,
-      cod_partido, cod_candidato, votos_partido, porc_partido,
+      cod_partido, votos_partido, porc_partido,
       mesas_instaladas, mesas_informadas, porc_mesas,
       potencial_sufragantes, total_sufragantes, votos_validos,
       votos_nulos, votos_no_marcados

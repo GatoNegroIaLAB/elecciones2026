@@ -107,11 +107,25 @@ const ConsultasSection = ({ resultados, candidatos, loading }) => (
   <section>
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       {CONSULTAS_DEF.map(({ cod, label, color }) => {
-        const cands = resultados
-          .filter(r => r.cod_partido === cod && r.cod_candidato !== '000')
-          .sort((a, b) => b.votos_partido - a.votos_partido)
-        const totalConsulta = cands.reduce((s, c) => s + (c.votos_partido || 0), 0)
         const stats = resultados.find(r => r.cod_partido === cod) || {}
+
+        const candsFromResultados = resultados
+          .filter(r => r.cod_partido === cod && r.cod_candidato && r.cod_candidato !== '000')
+          .sort((a, b) => b.votos_partido - a.votos_partido)
+
+        const candsFromCatalogo = candidatos
+          .filter(c => c.cod_partido === cod)
+          .map(c => ({
+            cod_candidato: c.cod_candidato,
+            votos_partido: 0,
+            _fallbackCatalogo: true,
+          }))
+
+        const cands = candsFromResultados.length ? candsFromResultados : candsFromCatalogo
+        const totalConsulta = candsFromResultados.length
+          ? candsFromResultados.reduce((s, c) => s + (c.votos_partido || 0), 0)
+          : (stats.votos_partido || 0)
+
         return (
           <div key={cod} className="bg-[#414E57]/55 border border-[#414E57] rounded-xl overflow-hidden backdrop-blur-sm">
             <div className="px-4 py-3 border-b border-[#414E57]" style={{ borderLeftColor: color, borderLeftWidth: 4 }}>
@@ -119,7 +133,7 @@ const ConsultasSection = ({ resultados, candidatos, loading }) => (
               <h3 className="text-xs font-black text-white mt-0.5 leading-tight">{label}</h3>
               <p className="text-[10px] text-[#BDB09B] mt-1">
                 {stats.porc_mesas ? `${parseFloat(stats.porc_mesas).toFixed(1)}% mesas` : '—'}
-                {' · '}{totalConsulta.toLocaleString('es-CO')} votos
+                {' · '}{(totalConsulta || 0).toLocaleString('es-CO')} votos
               </p>
             </div>
             <div className="p-4 space-y-3">
@@ -130,7 +144,7 @@ const ConsultasSection = ({ resultados, candidatos, loading }) => (
               ) : cands.map((c, idx) => {
                 const cand = candidatos.find(x => x.cod_partido === cod && x.cod_candidato === c.cod_candidato)
                 const nombre = cand ? `${cand.nombre} ${cand.apellido}` : `Candidato ${c.cod_candidato}`
-                const pct = totalConsulta > 0 ? (c.votos_partido / totalConsulta) * 100 : 0
+                const pct = totalConsulta > 0 ? ((c.votos_partido || 0) / totalConsulta) * 100 : 0
                 return (
                   <div key={c.cod_candidato} className="space-y-1">
                     <div className="flex justify-between text-xs">
@@ -143,7 +157,9 @@ const ConsultasSection = ({ resultados, candidatos, loading }) => (
                         style={{ width: `${pct}%`, backgroundColor: color }}
                       />
                     </div>
-                    <p className="text-[10px] text-[#BDB09B]">{(c.votos_partido || 0).toLocaleString('es-CO')} votos</p>
+                    <p className="text-[10px] text-[#BDB09B]">
+                      {c._fallbackCatalogo ? 'Sin voto individual en feed actual' : `${(c.votos_partido || 0).toLocaleString('es-CO')} votos`}
+                    </p>
                   </div>
                 )
               })}
