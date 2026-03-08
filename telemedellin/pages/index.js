@@ -451,7 +451,7 @@ export default function Home() {
               </p>
             </Card>
             <Card className="border-l-4 border-l-yellow-500">
-              <p className="text-[10px] text-[#BDB09B] font-bold uppercase tracking-widest">{corporacion === 'CAMARA' ? 'Líder Antiquia' : 'Líder'}</p>
+              <p className="text-[10px] text-[#BDB09B] font-bold uppercase tracking-widest">{corporacion === 'CAMARA' && circunscripcion === 'TERRITORIAL' ? 'Líder Antioquia' : 'Líder'}</p>
               <h2 className="text-base font-black text-white mt-1 leading-tight truncate">
                 {leader ? getNombre(leader.cod_partido) : (loading ? 'Cargando...' : 'Sin datos')}
               </h2>
