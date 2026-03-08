@@ -20,7 +20,7 @@ export async function getResultados(corporacion = 'SENADO') {
   const { data, error } = await supabase
     .from('avances_resultados')
     .select(`
-      corporacion, num_avance, tipo_boletin,
+      corporacion, num_avance, tipo_boletin, circunscripcion,
       cod_dpto, nombre_dpto, cod_municipio, nombre_municipio,
       cod_partido, votos_partido, porc_partido,
       mesas_instaladas, mesas_informadas, porc_mesas,
