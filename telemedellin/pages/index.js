@@ -474,7 +474,7 @@ export default function Home() {
               <div className="aspect-video w-full bg-black">
                 <iframe
                   width="100%" height="100%"
-                  src="https://www.youtube.com/embed/B0OF-ovhdHY?autoplay=0&mute=0&rel=0&modestbranding=1"
+                  src="https://www.youtube.com/embed/qWqWVzOMgsE?autoplay=0&mute=0&rel=0&modestbranding=1"
                   title="Telemedellín en Vivo"
                   frameBorder="0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
