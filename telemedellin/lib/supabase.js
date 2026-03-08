@@ -22,21 +22,27 @@ export async function getResultados(corporacion = 'SENADO') {
     .select(`
       corporacion, num_avance, tipo_boletin, circunscripcion,
       cod_dpto, nombre_dpto, cod_municipio, nombre_municipio,
-      cod_partido, votos_partido, porc_partido,
+      cod_partido, cod_candidato, votos_partido, porc_partido,
       mesas_instaladas, mesas_informadas, porc_mesas,
       potencial_sufragantes, total_sufragantes, votos_validos,
       votos_nulos, votos_no_marcados
     `)
     .eq('corporacion', corporacion)
-    .eq('tipo_boletin', 'NACIONAL')
     .eq('num_avance', ultimoAvance)
     .order('votos_partido', { ascending: false })
 
-  // Cámara: mostrar Antioquia por defecto
-  if (corporacion === 'CAMARA') {
-    query = query.eq('cod_dpto', '01')
+  if (corporacion === 'CONSULTAS') {
+    // En consultas dejamos cobertura nacional sin filtrar por departamento.
+    query = query.eq('tipo_boletin', 'NACIONAL')
   } else {
-    query = query.eq('cod_dpto', '00')
+    query = query.eq('tipo_boletin', 'NACIONAL')
+
+    // Cámara: mostrar Antioquia por defecto
+    if (corporacion === 'CAMARA') {
+      query = query.eq('cod_dpto', '01')
+    } else {
+      query = query.eq('cod_dpto', '00')
+    }
   }
 
   const { data, error } = await query
