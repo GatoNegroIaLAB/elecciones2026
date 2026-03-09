@@ -37,10 +37,15 @@ export async function getResultados(corporacion = 'SENADO') {
   } else {
     query = query.eq('tipo_boletin', 'NACIONAL')
 
-    // Senado mantiene agregado nacional; Cámara no se filtra por dpto aquí
-    // para no ocultar resultados por variaciones de codificación territorial.
     if (corporacion === 'SENADO') {
       query = query.eq('cod_dpto', '00')
+    }
+
+    if (corporacion === 'CAMARA') {
+      // Cámara al aire: solo territorial Antioquia.
+      query = query
+        .eq('circunscripcion', 'TERRITORIAL')
+        .in('cod_dpto', ['05', '5', '01'])
     }
   }
 

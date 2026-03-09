@@ -103,18 +103,21 @@ const CONSULTAS_DEF = [
   { cod: '00300', label: 'Frente por la Vida', color: '#A42EFF' },
 ]
 
+const normalizeCode = (v) => String(v ?? '').replace(/^0+/, '')
+
 const ConsultasSection = ({ resultados, candidatos, loading }) => (
   <section>
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       {CONSULTAS_DEF.map(({ cod, label, color }) => {
-        const stats = resultados.find(r => r.cod_partido === cod) || {}
+        const codNorm = normalizeCode(cod)
+        const stats = resultados.find(r => normalizeCode(r.cod_partido) === codNorm) || {}
 
         const candsFromResultados = resultados
-          .filter(r => r.cod_partido === cod && r.cod_candidato && r.cod_candidato !== '000')
+          .filter(r => normalizeCode(r.cod_partido) === codNorm && r.cod_candidato && r.cod_candidato !== '000')
           .sort((a, b) => b.votos_partido - a.votos_partido)
 
         const candsFromCatalogo = candidatos
-          .filter(c => c.cod_partido === cod)
+          .filter(c => normalizeCode(c.cod_partido) === codNorm)
           .map(c => ({
             cod_candidato: c.cod_candidato,
             votos_partido: 0,
@@ -142,7 +145,7 @@ const ConsultasSection = ({ resultados, candidatos, loading }) => (
               ) : cands.length === 0 ? (
                 <p className="text-[#BDB09B] text-xs text-center py-4">Sin datos aún</p>
               ) : cands.map((c, idx) => {
-                const cand = candidatos.find(x => x.cod_partido === cod && x.cod_candidato === c.cod_candidato)
+                const cand = candidatos.find(x => normalizeCode(x.cod_partido) === codNorm && String(x.cod_candidato) === String(c.cod_candidato))
                 const nombre = cand ? `${cand.nombre} ${cand.apellido}` : `Candidato ${c.cod_candidato}`
                 const pct = totalConsulta > 0 ? ((c.votos_partido || 0) / totalConsulta) * 100 : 0
                 return (
@@ -441,16 +444,12 @@ export default function Home() {
               </div>
               {corporacion === 'CAMARA' && (
                 <div className="flex gap-1 bg-[#414E57] p-1 rounded-lg">
-                  {[
-                    { key: 'TERRITORIAL', label: 'Territorial' },
-                    { key: 'INDIGENAS',   label: 'Indígenas' },
-                    { key: 'AFRO',        label: 'Afro' },
-                  ].map(({ key, label }) => (
-                    <button key={key} onClick={() => setCircunscripcion(key)}
-                      className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${
-                        circunscripcion === key ? 'bg-[#0084B4] text-white' : 'text-[#BDB09B] hover:text-[#F8F8F7]'
-                      }`}>{label}</button>
-                  ))}
+                  <button
+                    onClick={() => setCircunscripcion('TERRITORIAL')}
+                    className="px-3 py-1 text-[10px] font-bold rounded-md bg-[#0084B4] text-white"
+                  >
+                    Territorial (Antioquia)
+                  </button>
                 </div>
               )}
             </div>
