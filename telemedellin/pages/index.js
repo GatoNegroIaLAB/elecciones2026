@@ -79,20 +79,71 @@ const Hemiciclo = ({ partidos, getColor }) => {
 }
 
 // ── Función para calcular curules por cifra repartidora (D'Hondt) ─────────────
-function calcularCurules(resultados, totalCurules) {
+function calcularCurules(resultados, totalCurules, opts = {}) {
   if (!resultados.length) return []
-  const partidos = resultados.map(r => ({ ...r, votos: r.votos_partido || 0 }))
-  const quotients = []
-  partidos.forEach(p => {
-    for (let d = 1; d <= totalCurules; d++) {
-      quotients.push({ cod: p.cod_partido, value: p.votos / d })
-    }
-  })
-  quotients.sort((a, b) => b.value - a.value)
+
+  const {
+    // Para Senado usamos umbral del 3% de votos válidos por lista.
+    umbralPorcentaje = 0.03,
+  } = opts
+
+  const partidos = resultados.map(r => ({ ...r, votos: Number(r.votos_partido) || 0 }))
+  const totalVotos = partidos.reduce((s, p) => s + p.votos, 0)
+
+  if (!totalVotos || totalCurules <= 0) {
+    return partidos.map(p => ({ ...p, curules: 0 }))
+  }
+
+  // 1) Umbral (porcentaje sobre votos válidos)
+  const umbralAbsoluto = totalVotos * umbralPorcentaje
+  const elegibles = partidos.filter(p => p.votos >= umbralAbsoluto)
+
+  if (!elegibles.length) {
+    return partidos.map(p => ({ ...p, curules: 0 }))
+  }
+
+  // 2) Cociente electoral
+  const cociente = totalVotos / totalCurules
+
+  // 3) Asignación inicial por parte entera de (votos / cociente)
   const curules = {}
-  quotients.slice(0, totalCurules).forEach(q => {
-    curules[q.cod] = (curules[q.cod] || 0) + 1
+  let asignadas = 0
+
+  elegibles.forEach(p => {
+    const base = Math.floor(p.votos / cociente)
+    curules[p.cod_partido] = base
+    asignadas += base
   })
+
+  // 4) Curules restantes por mayores residuos
+  let restantes = totalCurules - asignadas
+
+  const residuos = elegibles
+    .map(p => {
+      const base = curules[p.cod_partido] || 0
+      const residuo = p.votos - (base * cociente)
+      return {
+        cod: p.cod_partido,
+        residuo,
+        votos: p.votos,
+      }
+    })
+    .sort((a, b) => {
+      if (b.residuo !== a.residuo) return b.residuo - a.residuo
+      if (b.votos !== a.votos) return b.votos - a.votos
+      return String(a.cod).localeCompare(String(b.cod))
+    })
+
+  // Normalmente con Hare-restos cada lista recibe como máximo 1 curul adicional,
+  // pero dejamos este bucle robusto por si quedan más curules por asignar.
+  let i = 0
+  while (restantes > 0 && residuos.length > 0) {
+    const r = residuos[i % residuos.length]
+    curules[r.cod] = (curules[r.cod] || 0) + 1
+    restantes -= 1
+    i += 1
+  }
+
   return partidos.map(p => ({ ...p, curules: curules[p.cod_partido] || 0 }))
 }
 
