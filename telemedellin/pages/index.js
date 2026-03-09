@@ -9,7 +9,7 @@ import { supabase, getResultados, getControlAvances, getPartidos, enrichResultad
 
 const DEFAULT_COLOR = '#414E57'
 
-const TOTAL_SEATS_SENADO = 108
+const TOTAL_SEATS_SENADO = 103
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const Badge = ({ children, variant = 'fuchsia' }) => (
