@@ -22,7 +22,7 @@ export async function getResultados(corporacion = 'SENADO') {
     .select(`
       corporacion, num_avance, tipo_boletin, circunscripcion,
       cod_dpto, nombre_dpto, cod_municipio, nombre_municipio,
-      cod_partido, votos_partido, porc_partido,
+      cod_partido, cod_candidato, votos_partido, porc_partido,
       mesas_instaladas, mesas_informadas, porc_mesas,
       potencial_sufragantes, total_sufragantes, votos_validos,
       votos_nulos, votos_no_marcados
@@ -32,15 +32,14 @@ export async function getResultados(corporacion = 'SENADO') {
     .order('votos_partido', { ascending: false })
 
   if (corporacion === 'CONSULTAS') {
-    // En consultas dejamos cobertura nacional sin filtrar por departamento.
-    query = query.eq('tipo_boletin', 'NACIONAL')
+    // Para consultas no forzamos tipo_boletin ni departamento,
+    // porque los votos por candidato pueden venir en otro nivel de detalle.
   } else {
     query = query.eq('tipo_boletin', 'NACIONAL')
 
-    // Cámara: mostrar Antioquia por defecto
-    if (corporacion === 'CAMARA') {
-      query = query.eq('cod_dpto', '01')
-    } else {
+    // Senado mantiene agregado nacional; Cámara no se filtra por dpto aquí
+    // para no ocultar resultados por variaciones de codificación territorial.
+    if (corporacion === 'SENADO') {
       query = query.eq('cod_dpto', '00')
     }
   }
