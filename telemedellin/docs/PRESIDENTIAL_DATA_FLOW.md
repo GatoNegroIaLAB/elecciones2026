@@ -116,13 +116,37 @@ Archivo principal: `pages/index.js`.
 
 La landing llama `GET /api/results-live` cada 60 segundos. Renderiza:
 
-- top 3 candidatos;
+- tres cards principales con foto para las mayores votaciones;
 - lista nacional completa;
 - avance nacional, incluido voto en blanco;
 - senal en vivo;
 - mapa de Colombia por ganador departamental.
 
 El mapa usa `lib/colombia-map.js`. `CONSULADOS` se excluye del mapa porque no es departamento geografico.
+
+### Layout vigente
+
+Mobile:
+
+1. Avance nacional.
+2. Tres cards principales.
+3. Senal en vivo.
+4. Todos los candidatos.
+5. Mapa de Colombia.
+
+Escritorio:
+
+1. Tres cards principales.
+2. Senal en vivo.
+3. Dos columnas: todos los candidatos a la izquierda y avance nacional a la derecha.
+4. Mapa de Colombia.
+
+### Fotos y rotulos
+
+- Las fotos se referencian desde Google Drive usando URLs `https://lh3.googleusercontent.com/d/<fileId>=s640`.
+- No se guardan fotos de candidatos como binarios en GitHub.
+- Rotulos de las tres cards: `Presidencia`, `Curul en Senado y Camara`, `Tercera mayor votacion`.
+- Las cards principales no usan iconos en el rotulo.
 
 ## Operacion manual
 
