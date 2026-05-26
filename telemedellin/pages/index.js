@@ -245,7 +245,7 @@ export default function Home() {
             </Card>
           )}
 
-          <Card className="order-1 p-4 sm:p-5 lg:col-span-5 lg:order-1">
+          <Card className="order-1 p-4 sm:p-5 lg:col-span-5 lg:order-4">
             <div className="mb-4 flex items-center gap-3">
               <Activity size={18} className="text-[#00B6CD]" />
               <div>
@@ -272,7 +272,7 @@ export default function Home() {
             </div>
           </Card>
 
-          <section className="order-2 grid grid-cols-1 gap-4 md:grid-cols-3 lg:col-span-12 lg:order-3">
+          <section className="order-2 grid grid-cols-1 gap-4 md:grid-cols-3 lg:col-span-12 lg:order-1">
             {topThree.map((candidate, idx) => (
               <Card key={candidate.code} className="overflow-hidden">
                 <div className="h-1.5" style={{ backgroundColor: candidate.color }} />
@@ -288,25 +288,25 @@ export default function Home() {
                   <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-[#414E57] via-[#414E57]/80 to-transparent" />
                   <div className="absolute inset-y-0 right-0 w-2/3 bg-gradient-to-l from-[#414E57]/20 to-transparent" />
                   <div className="relative z-10 max-w-[68%]">
-                  <div className="mb-4 flex items-center justify-between">
-                    <span className="rounded-full bg-black/30 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-[#BDB09B]">
-                      Puesto {idx + 1}
-                    </span>
-                    {idx === 0 ? <Trophy size={20} className="text-[#F1AA41]" /> : <Medal size={20} className="text-[#00B6CD]" />}
-                  </div>
-                  <h2 className="text-lg font-black leading-tight text-white sm:text-xl">{candidate.name}</h2>
-                  <p className="mt-1 text-xs text-[#BDB09B]">{candidate.party}</p>
-                  <div className="mt-5 flex items-end justify-between gap-3">
-                    <p className="text-2xl font-black tabular-nums text-white sm:text-3xl">{formatPercent(candidate.percent)}</p>
-                    <p className="pb-1 text-right text-sm font-bold tabular-nums text-[#BDB09B]">{formatNumber(candidate.votes)} votos</p>
-                  </div>
+                    <div className="mb-4 flex items-center justify-between">
+                      <span className="rounded-full bg-black/30 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-[#BDB09B]">
+                        Puesto {idx + 1}
+                      </span>
+                      {idx === 0 ? <Trophy size={20} className="text-[#F1AA41]" /> : <Medal size={20} className="text-[#00B6CD]" />}
+                    </div>
+                    <h2 className="text-lg font-black leading-tight text-white sm:text-xl">{candidate.name}</h2>
+                    <p className="mt-1 text-xs text-[#BDB09B]">{candidate.party}</p>
+                    <div className="mt-5 flex items-end justify-between gap-3">
+                      <p className="text-2xl font-black tabular-nums text-white sm:text-3xl">{formatPercent(candidate.percent)}</p>
+                      <p className="pb-1 text-right text-sm font-bold tabular-nums text-[#BDB09B]">{formatNumber(candidate.votes)} votos</p>
+                    </div>
                   </div>
                 </div>
               </Card>
             ))}
           </section>
 
-          <section className="order-3 lg:col-span-12 lg:order-4">
+          <section className="order-3 lg:col-span-12 lg:order-2">
             <Card className="overflow-hidden border-[#00A4C2]/40 shadow-[0_0_30px_rgba(6,182,212,0.07)]">
               <div className="flex items-center justify-between bg-[#414E57]/50 px-4 py-2">
                 <div className="flex items-center gap-2">
@@ -329,7 +329,7 @@ export default function Home() {
             </Card>
           </section>
 
-          <Card className="order-4 p-4 sm:p-5 lg:col-span-7 lg:order-2">
+          <Card className="order-4 p-4 sm:p-5 lg:col-span-7 lg:order-3">
             <div className="mb-5 flex items-center gap-3">
               <Users size={18} className="text-[#F1AA41]" />
               <div>
