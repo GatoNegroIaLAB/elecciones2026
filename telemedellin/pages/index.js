@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Head from 'next/head'
-import { Activity, Medal, Play, Trophy, Users } from 'lucide-react'
+import { Activity, Play, Users } from 'lucide-react'
 import { COLOMBIA_DEPARTMENTS, COLOMBIA_MAP_VIEWBOX } from '../lib/colombia-map'
 
 const LIVE_SIGNAL_URL = 'https://www.youtube.com/embed/qWqWVzOMgsE?autoplay=0&mute=0&rel=0&modestbranding=1'
 const DEFAULT_COLOR = '#64748b'
 const driveImage = id => `https://lh3.googleusercontent.com/d/${id}=s640`
+const TOP_CARD_LABELS = ['Presidencia', 'Curul en Senado y Cámara', 'Tercera mayor votación']
 
 const CANDIDATES = {
   '00026': { name: 'Iván Cepeda Castro', party: 'Movimiento Político Pacto Histórico', color: '#6B2D8B', image: driveImage('1foKgArgt66Wn70f_t85-DiOc9JrCotAZ') },
@@ -288,11 +289,10 @@ export default function Home() {
                   <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-[#414E57] via-[#414E57]/80 to-transparent" />
                   <div className="absolute inset-y-0 right-0 w-2/3 bg-gradient-to-l from-[#414E57]/20 to-transparent" />
                   <div className="relative z-10 max-w-[68%]">
-                    <div className="mb-4 flex items-center justify-between">
+                    <div className="mb-4">
                       <span className="rounded-full bg-black/30 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-[#BDB09B]">
-                        Puesto {idx + 1}
+                        {TOP_CARD_LABELS[idx] || `Puesto ${idx + 1}`}
                       </span>
-                      {idx === 0 ? <Trophy size={20} className="text-[#F1AA41]" /> : <Medal size={20} className="text-[#00B6CD]" />}
                     </div>
                     <h2 className="text-lg font-black leading-tight text-white sm:text-xl">{candidate.name}</h2>
                     <p className="mt-1 text-xs text-[#BDB09B]">{candidate.party}</p>
