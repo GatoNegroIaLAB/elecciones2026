@@ -7,19 +7,19 @@ const LIVE_SIGNAL_URL = 'https://www.youtube.com/embed/qWqWVzOMgsE?autoplay=0&mu
 const DEFAULT_COLOR = '#64748b'
 
 const CANDIDATES = {
-  '00026': { name: 'Iván Cepeda Castro', party: 'Movimiento Político Pacto Histórico', color: '#6B2D8B' },
-  '01004': { name: 'Claudia López', party: 'Con Claudia Imparables', color: '#2A7A4A' },
-  '01001': { name: 'Raúl Santiago Botero Jaramillo', party: 'Romper el Sistema', color: '#D4A017' },
-  '01003': { name: 'Abelardo De La Espriella', party: 'Defensores de la Patria', color: '#1E4D8C' },
-  '03001': { name: 'Óscar Mauricio Lizcano Arango', party: 'Coalición F.A.M.I.L.I.A', color: '#2C6FA8' },
-  '00020': { name: 'Miguel Uribe Londoño', party: 'Partido Demócrata Colombiano', color: '#C0252A' },
-  '01002': { name: 'Sondra Macollins Garvin Pinto', party: 'Sondra Macollins, La Abogada de Hierro', color: '#B02020' },
-  '00022': { name: 'Roy Leonardo Barreras Montealegre', party: 'Partido Político La Fuerza', color: '#C06040' },
-  '01006': { name: 'Carlos Eduardo Caicedo Omar', party: 'Caicedo', color: '#1E6A98' },
-  '00021': { name: 'Gustavo Matamoros Camacho', party: 'Partido Ecologista Colombiano', color: '#5A7A3A' },
-  '00009': { name: 'Paloma Valencia Laserna', party: 'Partido Centro Democrático', color: '#1A3A6B' },
-  '00015': { name: 'Sergio Fajardo Valderrama', party: 'Partido Político Dignidad & Compromiso', color: '#4A9A5A' },
-  '01005': { name: 'Luis Gilberto Murillo Urrutia', party: 'La Oportunidad Es Colombia', color: '#3A8A6A' },
+  '00026': { name: 'Iván Cepeda Castro', party: 'Movimiento Político Pacto Histórico', color: '#6B2D8B', image: '/candidatos/ivan-cepeda.png' },
+  '01004': { name: 'Claudia López', party: 'Con Claudia Imparables', color: '#2A7A4A', image: '/candidatos/claudia-lopez.png' },
+  '01001': { name: 'Raúl Santiago Botero Jaramillo', party: 'Romper el Sistema', color: '#D4A017', image: '/candidatos/raul-botero.png' },
+  '01003': { name: 'Abelardo De La Espriella', party: 'Defensores de la Patria', color: '#1E4D8C', image: '/candidatos/abelardo-de-la-espriella.png' },
+  '03001': { name: 'Óscar Mauricio Lizcano Arango', party: 'Coalición F.A.M.I.L.I.A', color: '#2C6FA8', image: '/candidatos/mauricio-lizcano.png' },
+  '00020': { name: 'Miguel Uribe Londoño', party: 'Partido Demócrata Colombiano', color: '#C0252A', image: '/candidatos/miguel-uribe-londono.png' },
+  '01002': { name: 'Sondra Macollins Garvin Pinto', party: 'Sondra Macollins, La Abogada de Hierro', color: '#B02020', image: '/candidatos/sondra-macollins.png' },
+  '00022': { name: 'Roy Leonardo Barreras Montealegre', party: 'Partido Político La Fuerza', color: '#C06040', image: '/candidatos/roy-barreras.png' },
+  '01006': { name: 'Carlos Eduardo Caicedo Omar', party: 'Caicedo', color: '#1E6A98', image: '/candidatos/carlos-caicedo.png' },
+  '00021': { name: 'Gustavo Matamoros Camacho', party: 'Partido Ecologista Colombiano', color: '#5A7A3A', image: '/candidatos/gustavo-matamoros.png' },
+  '00009': { name: 'Paloma Valencia Laserna', party: 'Partido Centro Democrático', color: '#1A3A6B', image: '/candidatos/paloma-valencia.png' },
+  '00015': { name: 'Sergio Fajardo Valderrama', party: 'Partido Político Dignidad & Compromiso', color: '#4A9A5A', image: '/candidatos/sergio-fajardo.png' },
+  '01005': { name: 'Luis Gilberto Murillo Urrutia', party: 'La Oportunidad Es Colombia', color: '#3A8A6A', image: '/candidatos/luis-gilberto-murillo.png' },
 }
 
 function formatNumber(value) {
@@ -39,6 +39,7 @@ function mapResult(row) {
     name: row.nombre_candidato || fallback.name || `Candidato ${row.codigo_partido}`,
     party: row.nombre_partido || fallback.party || `Partido ${row.codigo_partido}`,
     color: row.color_hex || fallback.color || DEFAULT_COLOR,
+    image: fallback.image || null,
     votes: Number(row.votos || 0),
     percent: Number(row.porc_votos || 0),
   }
@@ -274,7 +275,18 @@ export default function Home() {
             {topThree.map((candidate, idx) => (
               <Card key={candidate.code} className="overflow-hidden">
                 <div className="h-1.5" style={{ backgroundColor: candidate.color }} />
-                <div className="p-4 sm:p-5">
+                <div className="relative min-h-[260px] overflow-hidden p-4 sm:p-5">
+                  {candidate.image && (
+                    <img
+                      src={candidate.image}
+                      alt=""
+                      loading={idx === 0 ? 'eager' : 'lazy'}
+                      className="pointer-events-none absolute bottom-0 right-0 h-[78%] max-h-[230px] w-auto object-contain opacity-95"
+                    />
+                  )}
+                  <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-[#414E57] via-[#414E57]/80 to-transparent" />
+                  <div className="absolute inset-y-0 right-0 w-2/3 bg-gradient-to-l from-[#414E57]/20 to-transparent" />
+                  <div className="relative z-10 max-w-[68%]">
                   <div className="mb-4 flex items-center justify-between">
                     <span className="rounded-full bg-black/30 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-[#BDB09B]">
                       Puesto {idx + 1}
@@ -286,6 +298,7 @@ export default function Home() {
                   <div className="mt-5 flex items-end justify-between gap-3">
                     <p className="text-2xl font-black tabular-nums text-white sm:text-3xl">{formatPercent(candidate.percent)}</p>
                     <p className="pb-1 text-right text-sm font-bold tabular-nums text-[#BDB09B]">{formatNumber(candidate.votes)} votos</p>
+                  </div>
                   </div>
                 </div>
               </Card>
