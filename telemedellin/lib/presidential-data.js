@@ -102,7 +102,21 @@ export function getPartyRows(boletin) {
   return circunscriptions.flatMap(circ => circ?.Detalle_Partido || [])
 }
 
+export function getPartyTotalRows(boletin) {
+  const circunscriptions = boletin?.Detalle_Circunscripcion || []
+  return circunscriptions.flatMap(circ => circ?.Detalle_Partidos_Totales || [])
+}
+
+function getBlankVoteTotal(boletin) {
+  const totalRows = getPartyTotalRows(boletin)
+  return totalRows.find(row => (
+    String(row?.Partido ?? '').trim() === '00996' ||
+    String(row?.Descripcion ?? '').toUpperCase().includes('VOTOS EN BLANCO')
+  )) || null
+}
+
 export function mapBoletinHeader(boletin, sourceUrl) {
+  const blankVote = getBlankVoteTotal(boletin)
   return {
     avance_num: toInteger(boletin?.Numero),
     boletin_num: toInteger(boletin?.Boletin),
@@ -130,6 +144,8 @@ export function mapBoletinHeader(boletin, sourceUrl) {
     porc_votos_nulos: toNumber(boletin?.Porc_Votos_Nulos),
     votos_validos: toInteger(boletin?.Votos_Validos),
     porc_votos_validos: toNumber(boletin?.Porc_Votos_Validos),
+    votos_blancos: toInteger(blankVote?.Votos ?? boletin?.Votos_Blancos ?? boletin?.Votos_En_Blanco),
+    porc_votos_blancos: toNumber(blankVote?.Porc ?? blankVote?.Porc_Votos ?? boletin?.Porc_Votos_Blancos ?? boletin?.Porc_Votos_En_Blanco),
     votos_no_marcados: toInteger(boletin?.Votos_No_Marcados),
     porc_votos_no_marcados: toNumber(boletin?.Porc_Votos_No_Marcados),
     source_url: sourceUrl,
