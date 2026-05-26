@@ -103,6 +103,8 @@ create table if not exists public.pr_boletins (
   porc_votos_nulos numeric(6,2),
   votos_validos integer,
   porc_votos_validos numeric(6,2),
+  votos_blancos integer,
+  porc_votos_blancos numeric(6,2),
   votos_no_marcados integer,
   porc_votos_no_marcados numeric(6,2),
   source_url text,
@@ -224,6 +226,8 @@ select
   n.mesas_informadas,
   n.porc_mesas_informadas,
   n.votos_validos,
+  n.votos_blancos,
+  n.porc_votos_blancos,
   n.votos_nulos,
   n.votos_no_marcados
 from public.pr_sync_state s
