@@ -3,7 +3,6 @@ import Head from 'next/head'
 import { Activity, Medal, Play, RefreshCw, Trophy, Users } from 'lucide-react'
 import { COLOMBIA_DEPARTMENTS, COLOMBIA_MAP_VIEWBOX } from '../lib/colombia-map'
 
-const INDEX_URL = 'https://descargas.registraduria.gov.co/PR/0000/DEPRINDEX0000.json'
 const LIVE_SIGNAL_URL = 'https://www.youtube.com/embed/qWqWVzOMgsE?autoplay=0&mute=0&rel=0&modestbranding=1'
 const DEFAULT_COLOR = '#64748b'
 
@@ -32,35 +31,17 @@ function formatPercent(value) {
   return Number.isFinite(n) ? `${n.toFixed(2)}%` : '0.00%'
 }
 
-function proxyUrl(url) {
-  return `/api/proxy-boletin?url=${encodeURIComponent(url)}`
-}
-
-function resolveFromIndex(path) {
-  return new URL(path, INDEX_URL).toString()
-}
-
-function getBoletines(payload) {
-  if (!payload?.Boletin) return []
-  return Array.isArray(payload.Boletin) ? payload.Boletin : [payload.Boletin]
-}
-
-function extractResultsFromBoletin(boletin) {
-  const circ = boletin?.Detalle_Circunscripcion?.[0]
-  const rows = circ?.Detalle_Partido || []
-  return rows
-    .filter(row => CANDIDATES[row.Partido])
-    .map(row => ({
-      code: row.Partido,
-      votes: Number(row.Votos || 0),
-      percent: Number(row.Porc_Votos || row.Porc || 0),
-      ...CANDIDATES[row.Partido],
-    }))
-    .sort((a, b) => b.votes - a.votes)
-}
-
-function getWinner(boletin) {
-  return extractResultsFromBoletin(boletin)[0] || null
+function mapResult(row) {
+  const fallback = CANDIDATES[row.codigo_partido] || {}
+  return {
+    code: row.codigo_partido,
+    candidateCode: row.codigo_candidato,
+    name: row.nombre_candidato || fallback.name || `Candidato ${row.codigo_partido}`,
+    party: row.nombre_partido || fallback.party || `Partido ${row.codigo_partido}`,
+    color: row.color_hex || fallback.color || DEFAULT_COLOR,
+    votes: Number(row.votos || 0),
+    percent: Number(row.porc_votos || 0),
+  }
 }
 
 function normalizeDepartmentName(name = '') {
@@ -162,6 +143,7 @@ const ColombiaMap = ({ winnersByDepartment }) => (
 
 export default function Home() {
   const [national, setNational] = useState(null)
+  const [candidates, setCandidates] = useState([])
   const [departments, setDepartments] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -172,28 +154,19 @@ export default function Home() {
       setLoading(true)
       setError('')
 
-      const indexRes = await fetch(proxyUrl(INDEX_URL))
-      if (!indexRes.ok) throw new Error('No se pudo leer el índice presidencial')
-      const index = await indexRes.json()
-      const avance = index.Avance || {}
+      const response = await fetch('/api/results-live')
+      if (!response.ok) throw new Error('No se pudieron leer los resultados presidenciales')
 
-      const [nationalRes, departmentsRes] = await Promise.all([
-        fetch(proxyUrl(resolveFromIndex(avance.URL_Json_COLOMBIA))),
-        fetch(proxyUrl(resolveFromIndex(avance.URL_Json_DEPARTAMENTOS))),
-      ])
-
-      if (!nationalRes.ok || !departmentsRes.ok) {
-        throw new Error('No se pudieron leer los boletines presidenciales')
-      }
-
-      const [nationalJson, departmentsJson] = await Promise.all([
-        nationalRes.json(),
-        departmentsRes.json(),
-      ])
-
-      setNational(getBoletines(nationalJson)[0] || null)
-      setDepartments(getBoletines(departmentsJson))
-      setLastUpdate(new Date())
+      const data = await response.json()
+      setNational(data.status || null)
+      setCandidates((data.national || []).map(mapResult))
+      setDepartments((data.departments || []).map(row => ({
+        code: row.codigo_departamento,
+        name: row.nombre_departamento,
+        mesas: row.porc_mesas_informadas,
+        winner: mapResult(row),
+      })))
+      setLastUpdate(data.status?.fetched_at ? new Date(data.status.fetched_at) : new Date())
     } catch (e) {
       setError(e.message || 'Error cargando datos')
     } finally {
@@ -221,17 +194,13 @@ export default function Home() {
     }
   }, [])
 
-  const candidates = useMemo(() => extractResultsFromBoletin(national), [national])
   const topThree = candidates.slice(0, 3)
   const leader = candidates[0]
   const second = candidates[1]
   const leaderVotes = leader?.votes || 0
-  const departmentWinners = useMemo(() => departments.map(dep => ({
-    code: dep.Departamento,
-    name: dep.Desc_Departamento,
-    winner: getWinner(dep),
-    mesas: dep.Porc_Mesas_Informadas,
-  })).filter(dep => dep.winner && departmentKey(dep.name) !== 'CONSULADOS'), [departments])
+  const departmentWinners = useMemo(() => (
+    departments.filter(dep => dep.winner && departmentKey(dep.name) !== 'CONSULADOS')
+  ), [departments])
   const winnersByDepartment = useMemo(() => {
     const map = new Map()
     departmentWinners.forEach(dep => map.set(departmentKey(dep.name), dep))
@@ -376,11 +345,11 @@ export default function Home() {
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <p className="text-[10px] font-bold uppercase tracking-widest text-[#BDB09B]">Mesas informadas</p>
-                    <p className="mt-1 text-2xl font-black text-white">{formatPercent(national?.Porc_Mesas_Informadas)}</p>
+                    <p className="mt-1 text-2xl font-black text-white">{formatPercent(national?.porc_mesas_informadas)}</p>
                   </div>
                   <div>
                     <p className="text-[10px] font-bold uppercase tracking-widest text-[#BDB09B]">Votos válidos</p>
-                    <p className="mt-1 text-2xl font-black text-white">{formatNumber(national?.Votos_Validos)}</p>
+                    <p className="mt-1 text-2xl font-black text-white">{formatNumber(national?.votos_validos)}</p>
                   </div>
                 </div>
               </Card>
