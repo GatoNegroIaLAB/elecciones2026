@@ -229,7 +229,7 @@ export default function Home() {
                   {error ? 'Revisar datos' : 'En vivo'}
                 </span>
                 <span className="rounded-md border border-[#00A4C2]/40 bg-[#00629E]/35 px-2 py-1 text-[10px] font-bold">
-                  Registraduría Nacional
+                  Datos oficiales de la Registraduría Nacional
                 </span>
                 <span className="rounded-md border border-[#F1AA41]/50 bg-[#F1AA41]/15 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide">
                   Presidencia y Vicepresidencia
