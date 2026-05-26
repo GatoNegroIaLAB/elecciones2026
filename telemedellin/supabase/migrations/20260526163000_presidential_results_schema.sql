@@ -316,19 +316,19 @@ on conflict (codigo) do update set nombre = excluded.nombre;
 
 insert into public.pr_catalog_parties (codigo, nombre, es_nacional, color_hex)
 values
-  ('00009', 'PARTIDO CENTRO DEMOCRATICO', true, '#1e40af'),
-  ('00015', 'PARTIDO POLITICO DIGNIDAD & COMPROMISO', true, '#f97316'),
-  ('00020', 'PARTIDO DEMOCRATA COLOMBIANO', true, '#2563eb'),
-  ('00021', 'PARTIDO ECOLOGISTA COLOMBIANO', true, '#22c55e'),
-  ('00022', 'PARTIDO POLITICO LA FUERZA', true, '#16a34a'),
-  ('00026', 'MOVIMIENTO POLITICO PACTO HISTORICO', true, '#ef4444'),
-  ('01001', 'ROMPER EL SISTEMA', true, '#0ea5e9'),
-  ('01002', 'SONDRA MACOLLINS, LA ABOGADA DE HIERRO', true, '#db2777'),
-  ('01003', 'DEFENSORES DE LA PATRIA', true, '#1d4ed8'),
-  ('01004', 'CON CLAUDIA IMPARABLES', true, '#f59e0b'),
-  ('01005', 'LA OPORTUNIDAD ES COLOMBIA', true, '#0f766e'),
-  ('01006', 'CAICEDO', true, '#14b8a6'),
-  ('03001', 'COALICION F.A.M.I.L.I.A', true, '#9333ea')
+  ('00009', 'PARTIDO CENTRO DEMOCRATICO', true, '#1A3A6B'),
+  ('00015', 'PARTIDO POLITICO DIGNIDAD & COMPROMISO', true, '#4A9A5A'),
+  ('00020', 'PARTIDO DEMOCRATA COLOMBIANO', true, '#C0252A'),
+  ('00021', 'PARTIDO ECOLOGISTA COLOMBIANO', true, '#5A7A3A'),
+  ('00022', 'PARTIDO POLITICO LA FUERZA', true, '#C06040'),
+  ('00026', 'MOVIMIENTO POLITICO PACTO HISTORICO', true, '#6B2D8B'),
+  ('01001', 'ROMPER EL SISTEMA', true, '#D4A017'),
+  ('01002', 'SONDRA MACOLLINS, LA ABOGADA DE HIERRO', true, '#B02020'),
+  ('01003', 'DEFENSORES DE LA PATRIA', true, '#1E4D8C'),
+  ('01004', 'CON CLAUDIA IMPARABLES', true, '#2A7A4A'),
+  ('01005', 'LA OPORTUNIDAD ES COLOMBIA', true, '#3A8A6A'),
+  ('01006', 'CAICEDO', true, '#1E6A98'),
+  ('03001', 'COALICION F.A.M.I.L.I.A', true, '#2C6FA8')
 on conflict (codigo) do update set
   nombre = excluded.nombre,
   es_nacional = excluded.es_nacional,

@@ -7,19 +7,19 @@ const LIVE_SIGNAL_URL = 'https://www.youtube.com/embed/qWqWVzOMgsE?autoplay=0&mu
 const DEFAULT_COLOR = '#64748b'
 
 const CANDIDATES = {
-  '00026': { name: 'Iván Cepeda Castro', party: 'Movimiento Político Pacto Histórico', color: '#ef4444' },
-  '01004': { name: 'Claudia López', party: 'Con Claudia Imparables', color: '#f59e0b' },
-  '01001': { name: 'Raúl Santiago Botero Jaramillo', party: 'Romper el Sistema', color: '#0ea5e9' },
-  '01003': { name: 'Abelardo De La Espriella', party: 'Defensores de la Patria', color: '#1d4ed8' },
-  '03001': { name: 'Óscar Mauricio Lizcano Arango', party: 'Coalición F.A.M.I.L.I.A', color: '#9333ea' },
-  '00020': { name: 'Miguel Uribe Londoño', party: 'Partido Demócrata Colombiano', color: '#2563eb' },
-  '01002': { name: 'Sondra Macollins Garvin Pinto', party: 'Sondra Macollins, La Abogada de Hierro', color: '#db2777' },
-  '00022': { name: 'Roy Leonardo Barreras Montealegre', party: 'Partido Político La Fuerza', color: '#16a34a' },
-  '01006': { name: 'Carlos Eduardo Caicedo Omar', party: 'Caicedo', color: '#14b8a6' },
-  '00021': { name: 'Gustavo Matamoros Camacho', party: 'Partido Ecologista Colombiano', color: '#22c55e' },
-  '00009': { name: 'Paloma Valencia Laserna', party: 'Partido Centro Democrático', color: '#1e40af' },
-  '00015': { name: 'Sergio Fajardo Valderrama', party: 'Partido Político Dignidad & Compromiso', color: '#f97316' },
-  '01005': { name: 'Luis Gilberto Murillo Urrutia', party: 'La Oportunidad Es Colombia', color: '#0f766e' },
+  '00026': { name: 'Iván Cepeda Castro', party: 'Movimiento Político Pacto Histórico', color: '#6B2D8B' },
+  '01004': { name: 'Claudia López', party: 'Con Claudia Imparables', color: '#2A7A4A' },
+  '01001': { name: 'Raúl Santiago Botero Jaramillo', party: 'Romper el Sistema', color: '#D4A017' },
+  '01003': { name: 'Abelardo De La Espriella', party: 'Defensores de la Patria', color: '#1E4D8C' },
+  '03001': { name: 'Óscar Mauricio Lizcano Arango', party: 'Coalición F.A.M.I.L.I.A', color: '#2C6FA8' },
+  '00020': { name: 'Miguel Uribe Londoño', party: 'Partido Demócrata Colombiano', color: '#C0252A' },
+  '01002': { name: 'Sondra Macollins Garvin Pinto', party: 'Sondra Macollins, La Abogada de Hierro', color: '#B02020' },
+  '00022': { name: 'Roy Leonardo Barreras Montealegre', party: 'Partido Político La Fuerza', color: '#C06040' },
+  '01006': { name: 'Carlos Eduardo Caicedo Omar', party: 'Caicedo', color: '#1E6A98' },
+  '00021': { name: 'Gustavo Matamoros Camacho', party: 'Partido Ecologista Colombiano', color: '#5A7A3A' },
+  '00009': { name: 'Paloma Valencia Laserna', party: 'Partido Centro Democrático', color: '#1A3A6B' },
+  '00015': { name: 'Sergio Fajardo Valderrama', party: 'Partido Político Dignidad & Compromiso', color: '#4A9A5A' },
+  '01005': { name: 'Luis Gilberto Murillo Urrutia', party: 'La Oportunidad Es Colombia', color: '#3A8A6A' },
 }
 
 function formatNumber(value) {
