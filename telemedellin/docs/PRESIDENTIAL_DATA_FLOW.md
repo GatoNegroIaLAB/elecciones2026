@@ -58,7 +58,7 @@ Proceso:
 2. Resuelve los archivos `URL_Json_COLOMBIA` y `URL_Json_DEPARTAMENTOS`.
 3. Descarga JSON/GZIP desde Registraduria con Basic Auth.
 4. Guarda payloads crudos en `pr_raw_payloads`.
-5. Normaliza cabeceras en `pr_boletins`.
+5. Normaliza cabeceras en `pr_boletins`, incluido `VOTOS EN BLANCO` desde `Detalle_Partidos_Totales`.
 6. Normaliza votos por partido/candidato en `pr_results`.
 7. Actualiza `pr_sync_state`.
 
@@ -85,7 +85,7 @@ Las tablas presidenciales usan prefijo `pr_` para no mezclar datos con las tabla
 
 ### Boletines y resultados
 
-- `pr_boletins`: cabecera de cada boletin por nivel nacional/departamental.
+- `pr_boletins`: cabecera de cada boletin por nivel nacional/departamental. Incluye votos validos, nulos, no marcados y voto en blanco.
 - `pr_results`: votos y porcentajes por partido/candidato para cada boletin.
 
 ### Vistas
@@ -105,6 +105,7 @@ Primera ingesta manual validada:
 - `3` payloads crudos.
 - `13` candidatos nacionales.
 - `34` departamentos.
+- Voto en blanco identificado en la fuente oficial como `Detalle_Partidos_Totales` codigo `00996`.
 - Estado `ok`.
 
 El avance inicial de prueba es `0000`; puede contener datos de prueba o estructura previa a jornada. En produccion debe tratarse como preconteo informativo, no vinculante.
@@ -117,9 +118,8 @@ La landing llama `GET /api/results-live` cada 60 segundos. Renderiza:
 
 - top 3 candidatos;
 - lista nacional completa;
-- lider;
-- segundo lugar;
-- avance nacional;
+- avance nacional, incluido voto en blanco;
+- senal en vivo;
 - mapa de Colombia por ganador departamental.
 
 El mapa usa `lib/colombia-map.js`. `CONSULADOS` se excluye del mapa porque no es departamento geografico.
