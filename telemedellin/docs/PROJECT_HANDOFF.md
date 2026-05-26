@@ -20,6 +20,7 @@ Fecha: 2026-05-26
 - Build local: OK.
 - Vercel production: `https://elecciones2026-beta.vercel.app`.
 - Flujo activo: `Registraduria -> /api/ingest-registraduria -> Supabase pr_* -> /api/results-live -> Web`.
+- Ultimo deploy validado al cierre del 2026-05-26: landing presidencial con fotos, layout responsive final, voto en blanco y copy superior actualizado.
 
 ## Servicios conectados
 
@@ -48,6 +49,40 @@ Fecha: 2026-05-26
 - Logica compartida de ingesta: `lib/presidential-data.js`.
 - Endpoint privado de ingesta: `pages/api/ingest-registraduria.js`.
 - Endpoint publico para la web: `pages/api/results-live.js`.
+- Landing principal: `pages/index.js`.
+- Mapa geografico: `lib/colombia-map.js`.
+
+## Landing actual
+
+- Fuente de datos frontend: `GET /api/results-live`.
+- Refresco automatico: cada 60 segundos.
+- Boton manual de actualizacion: eliminado para evitar recargas agresivas de usuarios.
+- Fotos de candidatos: se cargan desde URLs publicas optimizadas de Google Drive (`lh3.googleusercontent.com`) configuradas en `pages/index.js`; no se commitean binarios pesados al repo.
+- Voto en blanco: se muestra en la card de avance nacional, separado del ranking de candidatos.
+- Badge superior: `Datos oficiales de la Registraduria Nacional`.
+
+### Orden mobile
+
+1. Avance nacional.
+2. Tres cards principales.
+3. Senal en vivo.
+4. Todos los candidatos.
+5. Mapa de Colombia.
+
+### Orden escritorio
+
+1. Tres cards principales.
+2. Senal en vivo.
+3. Dos columnas: `Todos los candidatos` a la izquierda y `Avance nacional` a la derecha.
+4. Mapa de Colombia.
+
+### Cards principales
+
+- Card 1: `Presidencia`.
+- Card 2: `Curul en Senado y Camara`.
+- Card 3: `Tercera mayor votacion`.
+- Sin iconos en los rotulos.
+- Porcentaje arriba y numero de votos debajo, para no pisar la foto.
 
 ## Variables locales
 
@@ -75,6 +110,7 @@ Nota: las credenciales reales no deben quedar en GitHub ni en documentacion.
 3. Elegir mecanismo: Vercel Cron si el plan lo permite, o n8n/EasyPanel para mayor control.
 4. Durante pruebas, disparar ingesta manual con `Authorization: Bearer <REVALIDATE_TOKEN>`.
 5. Revisar visualmente la landing con datos reales cuando empiecen los avances oficiales.
+6. Dar acceso a la integracion de Notion sobre `TM_Elecciones` si se quiere actualizar la ficha desde Loki; al cierre, el conector devuelve `object_not_found`.
 
 ## Riesgos tecnicos
 
