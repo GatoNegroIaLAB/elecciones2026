@@ -236,55 +236,36 @@ export default function Home() {
           </div>
         </header>
 
-        <main className="mx-auto max-w-7xl space-y-5 p-3 sm:space-y-6 sm:p-4">
+        <main className="mx-auto grid max-w-7xl grid-cols-1 gap-5 p-3 sm:gap-6 sm:p-4 lg:grid-cols-12">
           {error && (
-            <Card className="border-red-500/50 p-4 text-sm text-red-100">
+            <Card className="border-red-500/50 p-4 text-sm text-red-100 lg:col-span-12">
               {error}
             </Card>
           )}
 
-          <section className="grid grid-cols-1 gap-4 lg:grid-cols-12 lg:items-start">
-            <Card className="p-4 sm:p-5 lg:col-span-5">
-              <div className="mb-4 flex items-center gap-3">
-                <Activity size={18} className="text-[#00B6CD]" />
-                <div>
-                  <h3 className="text-sm font-black uppercase tracking-widest text-white">Avance nacional</h3>
-                  <p className="text-[10px] uppercase tracking-widest text-[#BDB09B]">
-                    Última lectura: {lastUpdate ? lastUpdate.toLocaleTimeString('es-CO') : '—'}
-                  </p>
-                </div>
+          <Card className="order-1 p-4 sm:p-5 lg:col-span-5 lg:order-1">
+            <div className="mb-4 flex items-center gap-3">
+              <Activity size={18} className="text-[#00B6CD]" />
+              <div>
+                <h3 className="text-sm font-black uppercase tracking-widest text-white">Avance nacional</h3>
+                <p className="text-[10px] uppercase tracking-widest text-[#BDB09B]">
+                  Última lectura: {lastUpdate ? lastUpdate.toLocaleTimeString('es-CO') : '—'}
+                </p>
               </div>
-              <div className="grid grid-cols-2 gap-3 text-sm sm:gap-4">
-                <div className="rounded-lg bg-black/20 p-3">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-[#BDB09B]">Mesas informadas</p>
-                  <p className="mt-1 text-2xl font-black text-white">{formatPercent(national?.porc_mesas_informadas)}</p>
-                </div>
-                <div className="rounded-lg bg-black/20 p-3">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-[#BDB09B]">Votos válidos</p>
-                  <p className="mt-1 text-2xl font-black text-white">{formatNumber(national?.votos_validos)}</p>
-                </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3 text-sm sm:gap-4">
+              <div className="rounded-lg bg-black/20 p-3">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-[#BDB09B]">Mesas informadas</p>
+                <p className="mt-1 text-2xl font-black text-white">{formatPercent(national?.porc_mesas_informadas)}</p>
               </div>
-            </Card>
+              <div className="rounded-lg bg-black/20 p-3">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-[#BDB09B]">Votos válidos</p>
+                <p className="mt-1 text-2xl font-black text-white">{formatNumber(national?.votos_validos)}</p>
+              </div>
+            </div>
+          </Card>
 
-            <Card className="p-4 sm:p-5 lg:col-span-7">
-              <div className="mb-5 flex items-center gap-3">
-                <Users size={18} className="text-[#F1AA41]" />
-                <div>
-                  <h3 className="text-sm font-black uppercase tracking-widest text-white">Todos los candidatos</h3>
-                  <p className="text-[10px] uppercase tracking-widest text-[#BDB09B]">Votación nacional y porcentaje</p>
-                </div>
-              </div>
-              <div className="space-y-4 sm:space-y-5">
-                {loading && candidates.length === 0 ? (
-                  <p className="py-8 text-center text-sm text-[#BDB09B]">Cargando resultados...</p>
-                ) : candidates.map((candidate, idx) => (
-                  <CandidateRow key={candidate.code} candidate={candidate} leaderVotes={leaderVotes} rank={idx + 1} />
-                ))}
-              </div>
-            </Card>
-          </section>
-
-          <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <section className="order-2 grid grid-cols-1 gap-4 md:grid-cols-3 lg:col-span-12 lg:order-3">
             {topThree.map((candidate, idx) => (
               <Card key={candidate.code} className="overflow-hidden">
                 <div className="h-1.5" style={{ backgroundColor: candidate.color }} />
@@ -306,7 +287,7 @@ export default function Home() {
             ))}
           </section>
 
-          <section>
+          <section className="order-3 lg:col-span-12 lg:order-4">
             <Card className="overflow-hidden border-[#00A4C2]/40 shadow-[0_0_30px_rgba(6,182,212,0.07)]">
               <div className="flex items-center justify-between bg-[#414E57]/50 px-4 py-2">
                 <div className="flex items-center gap-2">
@@ -329,7 +310,24 @@ export default function Home() {
             </Card>
           </section>
 
-          <section>
+          <Card className="order-4 p-4 sm:p-5 lg:col-span-7 lg:order-2">
+            <div className="mb-5 flex items-center gap-3">
+              <Users size={18} className="text-[#F1AA41]" />
+              <div>
+                <h3 className="text-sm font-black uppercase tracking-widest text-white">Todos los candidatos</h3>
+                <p className="text-[10px] uppercase tracking-widest text-[#BDB09B]">Votación nacional y porcentaje</p>
+              </div>
+            </div>
+            <div className="space-y-4 sm:space-y-5">
+              {loading && candidates.length === 0 ? (
+                <p className="py-8 text-center text-sm text-[#BDB09B]">Cargando resultados...</p>
+              ) : candidates.map((candidate, idx) => (
+                <CandidateRow key={candidate.code} candidate={candidate} leaderVotes={leaderVotes} rank={idx + 1} />
+              ))}
+            </div>
+          </Card>
+
+          <section className="order-5 lg:col-span-12 lg:order-5">
             <Card className="p-5">
               <div className="mb-5">
                 <h3 className="text-sm font-black uppercase tracking-widest text-white">Mapa de Colombia por ganador departamental</h3>
