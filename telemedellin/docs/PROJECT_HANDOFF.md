@@ -37,12 +37,14 @@ Fecha: 2026-05-26
   - URL presidencial verificada por proxy:
     - `https://descargas.registraduria.gov.co/PR/0000/DEPRINDEX0000.json`
   - `/api/proxy-boletin` responde JSON valido para esa URL.
-  - Primera ingesta presidencial manual validada.
+- Primera ingesta presidencial manual validada.
+  - El voto en blanco viene en `Detalle_Partidos_Totales` como codigo `00996`, no como candidato normal.
 
 ## Documentacion tecnica
 
 - Flujo completo: `docs/PRESIDENTIAL_DATA_FLOW.md`.
 - Migracion Supabase: `supabase/migrations/20260526163000_presidential_results_schema.sql`.
+- Soporte voto en blanco: `supabase/migrations/20260526182500_add_blank_vote_support.sql`.
 - Logica compartida de ingesta: `lib/presidential-data.js`.
 - Endpoint privado de ingesta: `pages/api/ingest-registraduria.js`.
 - Endpoint publico para la web: `pages/api/results-live.js`.
