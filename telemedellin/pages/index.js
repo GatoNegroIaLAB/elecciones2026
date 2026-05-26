@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Head from 'next/head'
-import { Activity, Medal, Play, RefreshCw, Trophy, Users } from 'lucide-react'
+import { Activity, Medal, Play, Trophy, Users } from 'lucide-react'
 import { COLOMBIA_DEPARTMENTS, COLOMBIA_MAP_VIEWBOX } from '../lib/colombia-map'
 
 const LIVE_SIGNAL_URL = 'https://www.youtube.com/embed/qWqWVzOMgsE?autoplay=0&mute=0&rel=0&modestbranding=1'
@@ -75,17 +75,17 @@ const CandidateRow = ({ candidate, leaderVotes, rank }) => {
     <div className="space-y-2">
       <div className="flex items-start justify-between gap-3 text-sm">
         <div className="min-w-0">
-          <p className="font-bold text-white leading-tight">
+          <p className="break-words font-bold leading-tight text-white">
             <span className="text-[#BDB09B]">{rank}. </span>{candidate.name}
           </p>
-          <p className="text-[11px] text-[#BDB09B] truncate">{candidate.party}</p>
+          <p className="mt-0.5 truncate text-[11px] text-[#BDB09B]">{candidate.party}</p>
         </div>
         <div className="text-right shrink-0">
           <p className="font-black text-white tabular-nums">{formatPercent(candidate.percent)}</p>
           <p className="text-[11px] text-[#BDB09B] tabular-nums">{formatNumber(candidate.votes)} votos</p>
         </div>
       </div>
-      <div className="h-2.5 overflow-hidden rounded-full bg-black/35">
+      <div className="h-2 overflow-hidden rounded-full bg-black/35 sm:h-2.5">
         <div
           className="h-full rounded-full transition-all duration-700"
           style={{ width: `${width}%`, backgroundColor: candidate.color || DEFAULT_COLOR }}
@@ -195,9 +195,7 @@ export default function Home() {
   }, [])
 
   const topThree = candidates.slice(0, 3)
-  const leader = candidates[0]
-  const second = candidates[1]
-  const leaderVotes = leader?.votes || 0
+  const leaderVotes = candidates[0]?.votes || 0
   const departmentWinners = useMemo(() => (
     departments.filter(dep => dep.winner && departmentKey(dep.name) !== 'CONSULADOS')
   ), [departments])
@@ -217,7 +215,7 @@ export default function Home() {
 
       <div className="min-h-screen text-[#F8F8F7] selection:bg-[#F1AA41]/30" style={{ fontFamily: "'IBM Plex Sans', sans-serif", backgroundColor: 'transparent' }}>
         <header className="sticky top-0 z-50 border-b border-[#414E57] bg-black/90 px-4 py-3 backdrop-blur-md">
-          <div className="mx-auto flex max-w-7xl flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="mx-auto max-w-7xl">
             <div>
               <h1 className="text-base font-bold leading-none">
                 Elecciones Presidenciales 2026 · <span className="text-[#00B6CD]">Resultados en vivo</span>
@@ -235,38 +233,72 @@ export default function Home() {
                 </span>
               </div>
             </div>
-            <button
-              onClick={fetchData}
-              className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#00A4C2]/50 bg-[#00A4C2]/15 px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-[#00A4C2]/25"
-            >
-              <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-              Actualizar
-            </button>
           </div>
         </header>
 
-        <main className="mx-auto max-w-7xl space-y-6 p-4">
+        <main className="mx-auto max-w-7xl space-y-5 p-3 sm:space-y-6 sm:p-4">
           {error && (
             <Card className="border-red-500/50 p-4 text-sm text-red-100">
               {error}
             </Card>
           )}
 
+          <section className="grid grid-cols-1 gap-4 lg:grid-cols-12 lg:items-start">
+            <Card className="p-4 sm:p-5 lg:col-span-5">
+              <div className="mb-4 flex items-center gap-3">
+                <Activity size={18} className="text-[#00B6CD]" />
+                <div>
+                  <h3 className="text-sm font-black uppercase tracking-widest text-white">Avance nacional</h3>
+                  <p className="text-[10px] uppercase tracking-widest text-[#BDB09B]">
+                    Última lectura: {lastUpdate ? lastUpdate.toLocaleTimeString('es-CO') : '—'}
+                  </p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3 text-sm sm:gap-4">
+                <div className="rounded-lg bg-black/20 p-3">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-[#BDB09B]">Mesas informadas</p>
+                  <p className="mt-1 text-2xl font-black text-white">{formatPercent(national?.porc_mesas_informadas)}</p>
+                </div>
+                <div className="rounded-lg bg-black/20 p-3">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-[#BDB09B]">Votos válidos</p>
+                  <p className="mt-1 text-2xl font-black text-white">{formatNumber(national?.votos_validos)}</p>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-4 sm:p-5 lg:col-span-7">
+              <div className="mb-5 flex items-center gap-3">
+                <Users size={18} className="text-[#F1AA41]" />
+                <div>
+                  <h3 className="text-sm font-black uppercase tracking-widest text-white">Todos los candidatos</h3>
+                  <p className="text-[10px] uppercase tracking-widest text-[#BDB09B]">Votación nacional y porcentaje</p>
+                </div>
+              </div>
+              <div className="space-y-4 sm:space-y-5">
+                {loading && candidates.length === 0 ? (
+                  <p className="py-8 text-center text-sm text-[#BDB09B]">Cargando resultados...</p>
+                ) : candidates.map((candidate, idx) => (
+                  <CandidateRow key={candidate.code} candidate={candidate} leaderVotes={leaderVotes} rank={idx + 1} />
+                ))}
+              </div>
+            </Card>
+          </section>
+
           <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
             {topThree.map((candidate, idx) => (
               <Card key={candidate.code} className="overflow-hidden">
                 <div className="h-1.5" style={{ backgroundColor: candidate.color }} />
-                <div className="p-5">
+                <div className="p-4 sm:p-5">
                   <div className="mb-4 flex items-center justify-between">
                     <span className="rounded-full bg-black/30 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-[#BDB09B]">
                       Puesto {idx + 1}
                     </span>
                     {idx === 0 ? <Trophy size={20} className="text-[#F1AA41]" /> : <Medal size={20} className="text-[#00B6CD]" />}
                   </div>
-                  <h2 className="text-xl font-black leading-tight text-white">{candidate.name}</h2>
+                  <h2 className="text-lg font-black leading-tight text-white sm:text-xl">{candidate.name}</h2>
                   <p className="mt-1 text-xs text-[#BDB09B]">{candidate.party}</p>
                   <div className="mt-5 flex items-end justify-between gap-3">
-                    <p className="text-3xl font-black tabular-nums text-white">{formatPercent(candidate.percent)}</p>
+                    <p className="text-2xl font-black tabular-nums text-white sm:text-3xl">{formatPercent(candidate.percent)}</p>
                     <p className="pb-1 text-right text-sm font-bold tabular-nums text-[#BDB09B]">{formatNumber(candidate.votes)} votos</p>
                   </div>
                 </div>
@@ -295,65 +327,6 @@ export default function Home() {
                 />
               </div>
             </Card>
-          </section>
-
-          <section className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-            <Card className="p-5 lg:col-span-6">
-              <div className="mb-5 flex items-center gap-3">
-                <Users size={18} className="text-[#F1AA41]" />
-                <div>
-                  <h3 className="text-sm font-black uppercase tracking-widest text-white">Todos los candidatos</h3>
-                  <p className="text-[10px] uppercase tracking-widest text-[#BDB09B]">Votación nacional y porcentaje</p>
-                </div>
-              </div>
-              <div className="space-y-5">
-                {loading && candidates.length === 0 ? (
-                  <p className="py-10 text-center text-sm text-[#BDB09B]">Cargando resultados...</p>
-                ) : candidates.map((candidate, idx) => (
-                  <CandidateRow key={candidate.code} candidate={candidate} leaderVotes={leaderVotes} rank={idx + 1} />
-                ))}
-              </div>
-            </Card>
-
-            <div className="space-y-6 lg:col-span-6">
-              <Card className="p-5">
-                <div className="mb-4 flex items-center gap-3">
-                  <Trophy size={18} className="text-[#F1AA41]" />
-                  <h3 className="text-sm font-black uppercase tracking-widest text-white">Candidato con mayor votación</h3>
-                </div>
-                {leader ? <CandidateRow candidate={leader} leaderVotes={leaderVotes} rank={1} /> : <p className="text-sm text-[#BDB09B]">Sin datos aún</p>}
-              </Card>
-
-              <Card className="p-5">
-                <div className="mb-4 flex items-center gap-3">
-                  <Medal size={18} className="text-[#00B6CD]" />
-                  <h3 className="text-sm font-black uppercase tracking-widest text-white">Candidato en segundo lugar</h3>
-                </div>
-                {second ? <CandidateRow candidate={second} leaderVotes={leaderVotes} rank={2} /> : <p className="text-sm text-[#BDB09B]">Sin datos aún</p>}
-              </Card>
-
-              <Card className="p-5">
-                <div className="mb-4 flex items-center gap-3">
-                  <Activity size={18} className="text-[#00B6CD]" />
-                  <div>
-                    <h3 className="text-sm font-black uppercase tracking-widest text-white">Avance nacional</h3>
-                    <p className="text-[10px] uppercase tracking-widest text-[#BDB09B]">
-                      Última lectura: {lastUpdate ? lastUpdate.toLocaleTimeString('es-CO') : '—'}
-                    </p>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-[#BDB09B]">Mesas informadas</p>
-                    <p className="mt-1 text-2xl font-black text-white">{formatPercent(national?.porc_mesas_informadas)}</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-[#BDB09B]">Votos válidos</p>
-                    <p className="mt-1 text-2xl font-black text-white">{formatNumber(national?.votos_validos)}</p>
-                  </div>
-                </div>
-              </Card>
-            </div>
           </section>
 
           <section>
