@@ -1,562 +1,324 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import Head from 'next/head'
-import {
-  Play, Send, Volume2, Copy, ChevronRight,
-  Search, LayoutGrid, Zap, Activity, Cloud,
-  Instagram, Twitter, Table as TableIcon, BarChart3
-} from 'lucide-react'
-import { supabase, getResultados, getControlAvances, getPartidos, enrichResultados, getCandidatos } from '../lib/supabase'
+import { Activity, Medal, Play, RefreshCw, Trophy, Users } from 'lucide-react'
+import { COLOMBIA_DEPARTMENTS, COLOMBIA_MAP_VIEWBOX } from '../lib/colombia-map'
 
-const DEFAULT_COLOR = '#414E57'
+const INDEX_URL = 'https://descargas.registraduria.gov.co/PR/0000/DEPRINDEX0000.json'
+const LIVE_SIGNAL_URL = 'https://www.youtube.com/embed/qWqWVzOMgsE?autoplay=0&mute=0&rel=0&modestbranding=1'
+const DEFAULT_COLOR = '#64748b'
 
-const TOTAL_SEATS_SENADO = 100
+const CANDIDATES = {
+  '00026': { name: 'Iván Cepeda Castro', party: 'Movimiento Político Pacto Histórico', color: '#ef4444' },
+  '01004': { name: 'Claudia López', party: 'Con Claudia Imparables', color: '#f59e0b' },
+  '01001': { name: 'Raúl Santiago Botero Jaramillo', party: 'Romper el Sistema', color: '#0ea5e9' },
+  '01003': { name: 'Abelardo De La Espriella', party: 'Defensores de la Patria', color: '#1d4ed8' },
+  '03001': { name: 'Óscar Mauricio Lizcano Arango', party: 'Coalición F.A.M.I.L.I.A', color: '#9333ea' },
+  '00020': { name: 'Miguel Uribe Londoño', party: 'Partido Demócrata Colombiano', color: '#2563eb' },
+  '01002': { name: 'Sondra Macollins Garvin Pinto', party: 'Sondra Macollins, La Abogada de Hierro', color: '#db2777' },
+  '00022': { name: 'Roy Leonardo Barreras Montealegre', party: 'Partido Político La Fuerza', color: '#16a34a' },
+  '01006': { name: 'Carlos Eduardo Caicedo Omar', party: 'Caicedo', color: '#14b8a6' },
+  '00021': { name: 'Gustavo Matamoros Camacho', party: 'Partido Ecologista Colombiano', color: '#22c55e' },
+  '00009': { name: 'Paloma Valencia Laserna', party: 'Partido Centro Democrático', color: '#1e40af' },
+  '00015': { name: 'Sergio Fajardo Valderrama', party: 'Partido Político Dignidad & Compromiso', color: '#f97316' },
+  '01005': { name: 'Luis Gilberto Murillo Urrutia', party: 'La Oportunidad Es Colombia', color: '#0f766e' },
+}
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-const Badge = ({ children, variant = 'fuchsia' }) => (
-  <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
-    variant === 'fuchsia'
-      ? 'bg-[#F1AA41]/20 text-[#F1AA41] border border-[#F1AA41]/40'
-      : 'bg-[#0084B4]/20 text-[#00B6CD] border border-[#00A4C2]/40'
-  }`}>{children}</span>
-)
+function formatNumber(value) {
+  return Number(value || 0).toLocaleString('es-CO')
+}
 
-const Card = ({ title, subtitle, children, className = '', icon }) => (
-  <div className={`bg-[#414E57]/55 border border-[#414E57] rounded-xl overflow-hidden backdrop-blur-sm ${className}`}>
-    {(title || icon) && (
-      <div className="px-5 py-4 border-b border-[#414E57] flex items-center gap-3">
-        {icon && <span className="text-[#F1AA41]">{icon}</span>}
-        <div>
-          <h3 className="text-xs font-bold text-[#F8F8F7] uppercase tracking-widest">{title}</h3>
-          {subtitle && <p className="text-[10px] text-[#BDB09B] uppercase tracking-widest mt-0.5">{subtitle}</p>}
-        </div>
-      </div>
-    )}
-    <div className="p-5">{children}</div>
+function formatPercent(value) {
+  const n = Number(String(value ?? 0).replace(',', '.'))
+  return Number.isFinite(n) ? `${n.toFixed(2)}%` : '0.00%'
+}
+
+function proxyUrl(url) {
+  return `/api/proxy-boletin?url=${encodeURIComponent(url)}`
+}
+
+function resolveFromIndex(path) {
+  return new URL(path, INDEX_URL).toString()
+}
+
+function getBoletines(payload) {
+  if (!payload?.Boletin) return []
+  return Array.isArray(payload.Boletin) ? payload.Boletin : [payload.Boletin]
+}
+
+function extractResultsFromBoletin(boletin) {
+  const circ = boletin?.Detalle_Circunscripcion?.[0]
+  const rows = circ?.Detalle_Partido || []
+  return rows
+    .filter(row => CANDIDATES[row.Partido])
+    .map(row => ({
+      code: row.Partido,
+      votes: Number(row.Votos || 0),
+      percent: Number(row.Porc_Votos || row.Porc || 0),
+      ...CANDIDATES[row.Partido],
+    }))
+    .sort((a, b) => b.votes - a.votes)
+}
+
+function getWinner(boletin) {
+  return extractResultsFromBoletin(boletin)[0] || null
+}
+
+function normalizeDepartmentName(name = '') {
+  return name
+    .toUpperCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^A-Z0-9 ]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function departmentKey(name = '') {
+  const normalized = normalizeDepartmentName(name)
+  if (normalized.includes('BOGOTA')) return 'BOGOTA'
+  if (normalized.includes('SAN ANDRES')) return 'SAN ANDRES'
+  if (normalized === 'VALLE') return 'VALLE DEL CAUCA'
+  if (normalized === 'NORTE DE SAN') return 'NORTE DE SANTANDER'
+  return normalized
+}
+
+const Card = ({ children, className = '' }) => (
+  <div className={`rounded-xl border border-[#414E57] bg-[#414E57]/55 backdrop-blur-sm ${className}`}>
+    {children}
   </div>
 )
 
-// ── Hemiciclo ─────────────────────────────────────────────────────────────────
-const Hemiciclo = ({ partidos, getColor }) => {
-  const seatsPerRow = [14, 18, 22, 26, 28]
-  const seatColors = []
-  partidos.forEach(p => {
-    for (let i = 0; i < (p.curules || 0); i++) {
-      if (seatColors.length < TOTAL_SEATS_SENADO) seatColors.push(getColor(p.cod_partido))
-    }
-  })
-  while (seatColors.length < TOTAL_SEATS_SENADO) seatColors.push('#1e293b')
-
-  const dots = []
-  let idx = 0
-  seatsPerRow.forEach((count, row) => {
-    const radius = 60 + row * 30
-    for (let i = 0; i < count; i++) {
-      const angle = Math.PI + (i / (count - 1)) * Math.PI
-      const x = 200 + radius * Math.cos(angle)
-      const y = 200 + radius * Math.sin(angle)
-      dots.push({ x, y, color: seatColors[idx++], key: `${row}-${i}` })
-    }
-  })
-
+const CandidateRow = ({ candidate, leaderVotes, rank }) => {
+  const width = leaderVotes > 0 ? Math.max((candidate.votes / leaderVotes) * 100, 2) : 0
   return (
-    <div className="flex flex-col items-center justify-center p-4">
-      <svg viewBox="0 0 400 220" className="w-full max-w-lg">
-        {dots.map(d => (
-          <circle
-            key={d.key} cx={d.x} cy={d.y} r="4.5"
-            fill={d.color}
-            style={{ filter: `drop-shadow(0 0 3px ${d.color})` }}
-          />
-        ))}
-        <rect x="185" y="185" width="30" height="15" rx="2" fill="#334155" />
-      </svg>
-      <div className="text-center mt-2">
-        <p className="text-[10px] uppercase font-bold text-[#BDB09B] tracking-widest">Configuración del Senado</p>
-        <p className="text-xl font-black text-white tracking-tighter">{TOTAL_SEATS_SENADO} CURULES TOTALES</p>
+    <div className="space-y-2">
+      <div className="flex items-start justify-between gap-3 text-sm">
+        <div className="min-w-0">
+          <p className="font-bold text-white leading-tight">
+            <span className="text-[#BDB09B]">{rank}. </span>{candidate.name}
+          </p>
+          <p className="text-[11px] text-[#BDB09B] truncate">{candidate.party}</p>
+        </div>
+        <div className="text-right shrink-0">
+          <p className="font-black text-white tabular-nums">{formatPercent(candidate.percent)}</p>
+          <p className="text-[11px] text-[#BDB09B] tabular-nums">{formatNumber(candidate.votes)} votos</p>
+        </div>
+      </div>
+      <div className="h-2.5 overflow-hidden rounded-full bg-black/35">
+        <div
+          className="h-full rounded-full transition-all duration-700"
+          style={{ width: `${width}%`, backgroundColor: candidate.color || DEFAULT_COLOR }}
+        />
       </div>
     </div>
   )
 }
 
-// ── Función para calcular curules por cifra repartidora (D'Hondt) ─────────────
-function calcularCurules(resultados, totalCurules, opts = {}) {
-  if (!resultados.length) return []
-
-  const {
-    // Para Senado usamos umbral del 3% de votos válidos por lista.
-    umbralPorcentaje = 0.03,
-  } = opts
-
-  const partidos = resultados.map(r => ({ ...r, votos: Number(r.votos_partido) || 0 }))
-  const totalVotos = partidos.reduce((s, p) => s + p.votos, 0)
-
-  if (!totalVotos || totalCurules <= 0) {
-    return partidos.map(p => ({ ...p, curules: 0 }))
-  }
-
-  // 1) Umbral (porcentaje sobre votos válidos)
-  const umbralAbsoluto = totalVotos * umbralPorcentaje
-  const elegibles = partidos.filter(p => p.votos >= umbralAbsoluto)
-
-  if (!elegibles.length) {
-    return partidos.map(p => ({ ...p, curules: 0 }))
-  }
-
-  // 2) Cociente electoral
-  const cociente = totalVotos / totalCurules
-
-  // 3) Asignación inicial por parte entera de (votos / cociente)
-  const curules = {}
-  let asignadas = 0
-
-  elegibles.forEach(p => {
-    const base = Math.floor(p.votos / cociente)
-    curules[p.cod_partido] = base
-    asignadas += base
-  })
-
-  // 4) Curules restantes por mayores residuos
-  let restantes = totalCurules - asignadas
-
-  const residuos = elegibles
-    .map(p => {
-      const base = curules[p.cod_partido] || 0
-      const residuo = p.votos - (base * cociente)
-      return {
-        cod: p.cod_partido,
-        residuo,
-        votos: p.votos,
-      }
-    })
-    .sort((a, b) => {
-      if (b.residuo !== a.residuo) return b.residuo - a.residuo
-      if (b.votos !== a.votos) return b.votos - a.votos
-      return String(a.cod).localeCompare(String(b.cod))
-    })
-
-  // Normalmente con Hare-restos cada lista recibe como máximo 1 curul adicional,
-  // pero dejamos este bucle robusto por si quedan más curules por asignar.
-  let i = 0
-  while (restantes > 0 && residuos.length > 0) {
-    const r = residuos[i % residuos.length]
-    curules[r.cod] = (curules[r.cod] || 0) + 1
-    restantes -= 1
-    i += 1
-  }
-
-  return partidos.map(p => ({ ...p, curules: curules[p.cod_partido] || 0 }))
-}
-
-// ── Sección de Consultas ──────────────────────────────────────────────────────
-const CONSULTAS_DEF = [
-  { cod: '00100', label: 'Consulta de las Soluciones', color: '#F1AA41' },
-  { cod: '00200', label: 'La Gran Consulta por Colombia', color: '#00A4C2' },
-  { cod: '00300', label: 'Frente por la Vida', color: '#A42EFF' },
-]
-
-const normalizeCode = (v) => String(v ?? '').replace(/^0+/, '')
-
-const ConsultasSection = ({ resultados, candidatos, loading }) => (
-  <section>
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      {CONSULTAS_DEF.map(({ cod, label, color }) => {
-        const codNorm = normalizeCode(cod)
-        const stats = resultados.find(r => normalizeCode(r.cod_partido) === codNorm) || {}
-
-        const candsFromResultados = resultados
-          .filter(r => normalizeCode(r.cod_partido) === codNorm && r.cod_candidato && r.cod_candidato !== '000')
-          .sort((a, b) => b.votos_partido - a.votos_partido)
-
-        const candsFromCatalogo = candidatos
-          .filter(c => normalizeCode(c.cod_partido) === codNorm)
-          .map(c => ({
-            cod_candidato: c.cod_candidato,
-            votos_partido: 0,
-            _fallbackCatalogo: true,
-          }))
-
-        const cands = candsFromResultados.length ? candsFromResultados : candsFromCatalogo
-        const totalConsulta = candsFromResultados.length
-          ? candsFromResultados.reduce((s, c) => s + (c.votos_partido || 0), 0)
-          : (stats.votos_partido || 0)
-
-        return (
-          <div key={cod} className="bg-[#414E57]/55 border border-[#414E57] rounded-xl overflow-hidden backdrop-blur-sm">
-            <div className="px-4 py-3 border-b border-[#414E57]" style={{ borderLeftColor: color, borderLeftWidth: 4 }}>
-              <p className="text-[10px] font-bold text-[#BDB09B] uppercase tracking-widest">Consulta</p>
-              <h3 className="text-xs font-black text-white mt-0.5 leading-tight">{label}</h3>
-              <p className="text-[10px] text-[#BDB09B] mt-1">
-                {stats.porc_mesas ? `${parseFloat(stats.porc_mesas).toFixed(1)}% mesas` : '—'}
-                {' · '}{(totalConsulta || 0).toLocaleString('es-CO')} votos
-              </p>
-            </div>
-            <div className="p-4 space-y-3">
-              {loading ? (
-                <p className="text-[#BDB09B] text-xs text-center py-4">Cargando...</p>
-              ) : cands.length === 0 ? (
-                <p className="text-[#BDB09B] text-xs text-center py-4">Sin datos aún</p>
-              ) : cands.map((c, idx) => {
-                const cand = candidatos.find(x => normalizeCode(x.cod_partido) === codNorm && String(x.cod_candidato) === String(c.cod_candidato))
-                const nombre = cand ? `${cand.nombre} ${cand.apellido}` : `Candidato ${c.cod_candidato}`
-                const pct = totalConsulta > 0 ? ((c.votos_partido || 0) / totalConsulta) * 100 : 0
-                return (
-                  <div key={c.cod_candidato} className="space-y-1">
-                    <div className="flex justify-between text-xs">
-                      <span className="text-[#F8F8F7] font-medium truncate max-w-[60%]">{idx + 1}. {nombre}</span>
-                      <span className="text-[#BDB09B] tabular-nums">{pct.toFixed(1)}%</span>
-                    </div>
-                    <div className="h-2 bg-[#1e293b] rounded-full overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all duration-1000"
-                        style={{ width: `${pct}%`, backgroundColor: color }}
-                      />
-                    </div>
-                    <p className="text-[10px] text-[#BDB09B]">
-                      {c._fallbackCatalogo ? 'Sin voto individual en feed actual' : `${(c.votos_partido || 0).toLocaleString('es-CO')} votos`}
-                    </p>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        )
-      })}
+const ColombiaMap = ({ winnersByDepartment }) => (
+  <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
+    <div className="lg:col-span-7">
+      <svg
+        viewBox={COLOMBIA_MAP_VIEWBOX}
+        role="img"
+        aria-label="Mapa de Colombia por ganador departamental"
+        className="h-auto w-full max-h-[680px]"
+      >
+        <rect width="100%" height="100%" rx="16" fill="rgba(0,0,0,0.18)" />
+        {COLOMBIA_DEPARTMENTS.map(department => {
+          const winner = winnersByDepartment.get(departmentKey(department.name))
+          return (
+            <path
+              key={department.code}
+              d={department.path}
+              fill={winner?.winner?.color || '#1f2937'}
+              stroke="#0f172a"
+              strokeWidth="0.8"
+              opacity={winner ? 0.94 : 0.45}
+            >
+              <title>
+                {winner
+                  ? `${department.name}: ${winner.winner.name} (${formatPercent(winner.winner.percent)})`
+                  : `${department.name}: sin datos`}
+              </title>
+            </path>
+          )
+        })}
+      </svg>
     </div>
-  </section>
+    <div className="lg:col-span-5">
+      <div className="grid max-h-[680px] grid-cols-1 gap-2 overflow-y-auto pr-1 custom-scrollbar sm:grid-cols-2 lg:grid-cols-1">
+        {[...winnersByDepartment.values()].map(dep => (
+          <div key={dep.code} className="rounded-lg border border-[#414E57] bg-black/20 p-3">
+            <div className="mb-2 h-2 rounded-full" style={{ backgroundColor: dep.winner.color || DEFAULT_COLOR }} />
+            <p className="text-xs font-black uppercase leading-tight text-white">{dep.name}</p>
+            <p className="mt-1 truncate text-[11px] font-bold text-[#BDB09B]">{dep.winner.name}</p>
+            <p className="mt-2 text-[10px] text-[#BDB09B]">{formatPercent(dep.winner.percent)} · {formatPercent(dep.mesas)} mesas</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
 )
 
-// ── Página principal ──────────────────────────────────────────────────────────
 export default function Home() {
-  const [corporacion, setCorporacion]   = useState('SENADO')
-  const [resultados, setResultados]     = useState([])
-  const [partidos, setPartidos]         = useState([])
+  const [national, setNational] = useState(null)
+  const [departments, setDepartments] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [lastUpdate, setLastUpdate] = useState(null)
 
-  const getColor = useCallback((cod) => {
-    const partido = partidos.find(p => p.codigo === cod)
-    return partido?.color_hex || DEFAULT_COLOR
-  }, [partidos])
-
-  const getNombre = useCallback((cod) => {
-    const partido = partidos.find(p => p.codigo === cod)
-    return partido?.nombre || cod
-  }, [partidos])
-
-  const [control, setControl]           = useState([])
-  const [loading, setLoading]           = useState(true)
-  const [lastUpdate, setLastUpdate]     = useState(new Date())
-  const [searchTerm, setSearchTerm]     = useState('')
-  const [messages, setMessages]         = useState([
-    { role: 'assistant', text: '¡Hola! Soy tu asistente de datos electorales. Puedes preguntarme, por ejemplo: “¿Quién va de primero?”, “¿Cómo va el escrutinio de mesas?” o “¿Cuál es el total de votos válidos?”.' }
-  ])
-  const [inputValue, setInputValue]     = useState('')
-  const [tableMode, setTableMode]       = useState('grafico')
-  const [isLive, setIsLive]             = useState(false)
-  const [candidatos, setCandidatos] = useState([])
-  const [circunscripcion, setCircunscripcion] = useState('TERRITORIAL')
-  const [resConsultas, setResConsultas] = useState([])
-  const [palabrasInstagram, setPalabrasInstagram] = useState([])
-  const [palabrasTwitter, setPalabrasTwitter]     = useState([])
-
-  const fetchPalabras = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     try {
-      const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
-      const SUPA_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-      const headers  = { apikey: SUPA_KEY, Authorization: `Bearer ${SUPA_KEY}` }
-      const [igRes, twRes] = await Promise.all([
-        fetch(`${SUPA_URL}/rest/v1/palabras_nube?fuente=eq.instagram&activa=eq.true&order=frecuencia.desc&limit=60&select=palabra,frecuencia`, { headers }),
-        fetch(`${SUPA_URL}/rest/v1/palabras_nube?fuente=eq.twitter&activa=eq.true&order=frecuencia.desc&limit=60&select=palabra,frecuencia`, { headers })
+      setLoading(true)
+      setError('')
+
+      const indexRes = await fetch(proxyUrl(INDEX_URL))
+      if (!indexRes.ok) throw new Error('No se pudo leer el índice presidencial')
+      const index = await indexRes.json()
+      const avance = index.Avance || {}
+
+      const [nationalRes, departmentsRes] = await Promise.all([
+        fetch(proxyUrl(resolveFromIndex(avance.URL_Json_COLOMBIA))),
+        fetch(proxyUrl(resolveFromIndex(avance.URL_Json_DEPARTAMENTOS))),
       ])
-      const ig = await igRes.json()
-      const tw = await twRes.json()
-      if (Array.isArray(ig)) setPalabrasInstagram(ig)
-      if (Array.isArray(tw)) setPalabrasTwitter(tw)
-    } catch(e) { console.error('Error fetching palabras:', e) }
+
+      if (!nationalRes.ok || !departmentsRes.ok) {
+        throw new Error('No se pudieron leer los boletines presidenciales')
+      }
+
+      const [nationalJson, departmentsJson] = await Promise.all([
+        nationalRes.json(),
+        departmentsRes.json(),
+      ])
+
+      setNational(getBoletines(nationalJson)[0] || null)
+      setDepartments(getBoletines(departmentsJson))
+      setLastUpdate(new Date())
+    } catch (e) {
+      setError(e.message || 'Error cargando datos')
+    } finally {
+      setLoading(false)
+    }
   }, [])
 
   useEffect(() => {
-    fetchPalabras()
-    const interval = setInterval(fetchPalabras, 60000)
-    return () => clearInterval(interval)
-  }, [fetchPalabras])
+    fetchData()
+    const id = setInterval(fetchData, 60000)
+    return () => clearInterval(id)
+  }, [fetchData])
 
   useEffect(() => {
     const sendHeight = () => {
-      const h = Math.max(
-        document.documentElement?.scrollHeight || 0,
-        document.body?.scrollHeight || 0
-      )
+      const h = Math.max(document.documentElement?.scrollHeight || 0, document.body?.scrollHeight || 0)
       window.parent?.postMessage({ type: 'tm-elecciones-height', height: h }, '*')
     }
-
     sendHeight()
     window.addEventListener('resize', sendHeight)
     const id = setInterval(sendHeight, 1000)
-
     return () => {
       window.removeEventListener('resize', sendHeight)
       clearInterval(id)
     }
   }, [])
 
-  const fetchData = useCallback(async () => {
-    try {
-      setLoading(true)
-      const [res, part, ctrl, cands, resC] = await Promise.all([
-        getResultados(corporacion),
-        getPartidos(),
-        getControlAvances(),
-        getCandidatos(),
-        getResultados('CONSULTAS')
-      ])
-      setResultados(enrichResultados(res, part))
-      setPartidos(part)
-      setControl(ctrl)
-      setLastUpdate(new Date())
-      setIsLive(res.length > 0)
-      setCandidatos(cands)
-      setResConsultas(resC)
-    } catch (e) {
-      console.error('Error fetching data:', e)
-    } finally {
-      setLoading(false)
-    }
-  }, [corporacion])
-
-  const LIVE_MODE = true // Activado para simulacro/elecciones
-
-  useEffect(() => {
-    if (!LIVE_MODE) {
-      fetchData() // carga datos una sola vez
-      return
-    }
-
-    fetchData()
-    const interval = setInterval(fetchData, 60000)
-    return () => clearInterval(interval)
-  }, [fetchData])
-
-  // Suscripción en tiempo real vía Supabase Realtime
-  useEffect(() => {
-    if (!LIVE_MODE) return
-
-    const channel = supabase
-      .channel('avances')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'avances_resultados',
-        filter: `corporacion=eq.${corporacion}`
-      }, () => fetchData())
-      .subscribe()
-
-    return () => supabase.removeChannel(channel)
-  }, [corporacion, fetchData])
-
-  // ── Datos procesados ────────────────────────────────────────────────────────
-  const resNacional = useMemo(() => {
-    const todos = resultados.filter(r => r.tipo_boletin === 'NACIONAL')
-    if (corporacion !== 'CAMARA') return todos
-    return todos.filter(r => r.circunscripcion === circunscripcion)
-  }, [resultados, corporacion, circunscripcion])
-
-  const resConCurules = useMemo(() => {
-    if (corporacion !== 'SENADO' || !resNacional.length) return resNacional
-    return calcularCurules(resNacional, TOTAL_SEATS_SENADO)
-  }, [resNacional, corporacion])
-
-  const resOrdenado = useMemo(() =>
-    [...resConCurules].sort((a, b) => b.votos_partido - a.votos_partido),
-    [resConCurules]
-  )
-
-  const resFiltrado = useMemo(() =>
-    resOrdenado.filter(r =>
-      getNombre(r.cod_partido).toLowerCase().includes(searchTerm.toLowerCase())
-    ).slice(0, 12),
-    [resOrdenado, searchTerm, getNombre]
-  )
-
-  const ctrlCorp = control.find(c => c.corporacion === corporacion)
-  const totalVotos = resNacional.reduce((s, r) => s + (r.votos_partido || 0), 0)
-  const leader = resOrdenado[0]
-
-  // Estadísticas de mesas (del primer registro nacional)
-  const statsNac = resNacional[0] || {}
-  const pctMesas = statsNac.porc_mesas
-    ? parseFloat(statsNac.porc_mesas.replace(',', '.'))
-    : 0
-  const pctParticipacion = statsNac.potencial_sufragantes
-    ? ((statsNac.total_sufragantes / statsNac.potencial_sufragantes) * 100).toFixed(1)
-    : '—'
-
-  // ── Brief IA ────────────────────────────────────────────────────────────────
-  const briefText = useMemo(() => {
-    if (!leader) return 'Esperando datos de la Registraduría...'
-    const curules = leader.curules ? ` con ${leader.curules} curules proyectadas` : ''
-    return `Análisis: En ${corporacion}, ${getNombre(leader.cod_partido)} lidera${curules} con ${(leader.votos_partido || 0).toLocaleString('es-CO')} votos. El escrutinio avanza al ${pctMesas.toFixed(2)}% de mesas informadas.`
-  }, [leader, corporacion, pctMesas, getNombre])
-
-  const speak = (text) => {
-    if (!window.speechSynthesis) return
-    window.speechSynthesis.cancel()
-    const u = new SpeechSynthesisUtterance(text)
-    u.lang = 'es-CO'
-    window.speechSynthesis.speak(u)
-  }
-
-  const normalizeText = (text = '') =>
-    text
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-
-  const handleSend = (e) => {
-    e.preventDefault()
-    if (!inputValue.trim()) return
-    const q = inputValue
-    setMessages(prev => [...prev, { role: 'user', text: q }])
-    setInputValue('')
-    setTimeout(() => {
-      let resp = ''
-      const ql = normalizeText(q)
-
-      const leaderKeywords = ['lider', 'primero', 'puntero', 'encabeza', 'ganando', 'top', 'primera fuerza']
-      const mesasKeywords = ['mesas', 'escrutinio', 'avance', 'conteo', 'porcentaje', 'reportadas', 'informadas']
-      const votosKeywords = ['votos', 'votacion', 'sufragios', 'total', 'votaron', 'voto']
-
-      const hasLeaderIntent = leaderKeywords.some(k => ql.includes(k))
-      const hasMesasIntent = mesasKeywords.some(k => ql.includes(k))
-      const hasVotosIntent = votosKeywords.some(k => ql.includes(k))
-
-      if (hasLeaderIntent) {
-        resp = leader
-          ? `${getNombre(leader.cod_partido)} lidera con ${(leader.votos_partido || 0).toLocaleString('es-CO')} votos.`
-          : 'Aún no hay datos disponibles.'
-      } else if (hasMesasIntent) {
-        resp = `Se han informado ${statsNac.mesas_informadas?.toLocaleString('es-CO') || '—'} de ${statsNac.mesas_instaladas?.toLocaleString('es-CO') || '—'} mesas (${pctMesas.toFixed(1)}%).`
-      } else if (hasVotosIntent) {
-        resp = `Total de votos válidos: ${totalVotos.toLocaleString('es-CO')}.`
-      } else {
-        resp = 'No te entendí del todo. Prueba con preguntas como: “¿Quién va de primero?”, “¿Cómo va el escrutinio de mesas?” o “¿Cuál es el total de votos válidos?”.'
-      }
-
-      setMessages(prev => [...prev, { role: 'assistant', text: resp }])
-      speak(resp)
-    }, 500)
-  }
+  const candidates = useMemo(() => extractResultsFromBoletin(national), [national])
+  const topThree = candidates.slice(0, 3)
+  const leader = candidates[0]
+  const second = candidates[1]
+  const leaderVotes = leader?.votes || 0
+  const departmentWinners = useMemo(() => departments.map(dep => ({
+    code: dep.Departamento,
+    name: dep.Desc_Departamento,
+    winner: getWinner(dep),
+    mesas: dep.Porc_Mesas_Informadas,
+  })).filter(dep => dep.winner && departmentKey(dep.name) !== 'CONSULADOS'), [departments])
+  const winnersByDepartment = useMemo(() => {
+    const map = new Map()
+    departmentWinners.forEach(dep => map.set(departmentKey(dep.name), dep))
+    return map
+  }, [departmentWinners])
 
   return (
     <>
       <Head>
-        <title>Telemedellín · Elecciones 2026 en Vivo</title>
+        <title>Telemedellín · Presidenciales 2026 en Vivo</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=IBM+Plex+Sans:wght@400;600;800&display=swap" rel="stylesheet" />
       </Head>
 
-      <div className="min-h-screen text-[#F8F8F7] selection:bg-[#F1AA41]/30"
-           style={{ fontFamily: "'IBM Plex Sans', sans-serif", backgroundColor: 'transparent' }}>
-
-        {/* HEADER */}
-        <header className="sticky top-0 z-50 bg-[#000000]/90 backdrop-blur-md border-b border-[#414E57] px-4 py-3">
-          <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-3">
-            <div className="flex items-center gap-4">
-
-              <div>
-                <h1 className="text-base font-bold leading-none">
-                  Elecciones 2026 · <span className="text-[#00B6CD]">Resultados en vivo</span>
-                </h1>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-[#F1AA41]/20 text-[#F1AA41] border border-[#F1AA41]/40">
-                    <span className={`w-1.5 h-1.5 rounded-full bg-[#F1AA41] ${isLive ? 'animate-pulse-glow' : ''}`} />
-                    {isLive ? 'EN VIVO' : 'ESPERANDO DATOS'}
-                  </span>
-                  <span className="px-2.5 py-1 rounded-md text-[10px] font-extrabold tracking-wide uppercase bg-[#F1AA41]/15 text-[#F8F8F7] border border-[#F1AA41]/50">
-                    Registraduría Nacional
-                  </span>
-                  <span className="text-[10px] text-[#F1AA41] font-bold">·</span>
-                  <span className="px-2 py-1 rounded-md text-[10px] font-bold bg-[#00629E]/35 text-[#F8F8F7] border border-[#00A4C2]/40">
-                    Hora: {lastUpdate.toLocaleTimeString('es-CO')}
-                  </span>
-                </div>
+      <div className="min-h-screen text-[#F8F8F7] selection:bg-[#F1AA41]/30" style={{ fontFamily: "'IBM Plex Sans', sans-serif", backgroundColor: 'transparent' }}>
+        <header className="sticky top-0 z-50 border-b border-[#414E57] bg-black/90 px-4 py-3 backdrop-blur-md">
+          <div className="mx-auto flex max-w-7xl flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h1 className="text-base font-bold leading-none">
+                Elecciones Presidenciales 2026 · <span className="text-[#00B6CD]">Resultados en vivo</span>
+              </h1>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <span className="flex items-center gap-1 rounded border border-[#F1AA41]/40 bg-[#F1AA41]/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#F1AA41]">
+                  <span className={`h-1.5 w-1.5 rounded-full bg-[#F1AA41] ${!error ? 'animate-pulse-glow' : ''}`} />
+                  {error ? 'Revisar datos' : 'En vivo'}
+                </span>
+                <span className="rounded-md border border-[#00A4C2]/40 bg-[#00629E]/35 px-2 py-1 text-[10px] font-bold">
+                  Registraduría Nacional
+                </span>
+                <span className="rounded-md border border-[#F1AA41]/50 bg-[#F1AA41]/15 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide">
+                  Presidencia y Vicepresidencia
+                </span>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              {/* Selector de corporación */}
-              <div className="flex gap-1 bg-[#414E57] p-1 rounded-lg">
-                {['SENADO','CAMARA'].map(c => (
-                  <button
-                    key={c}
-                    onClick={() => setCorporacion(c)}
-                    className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${
-                      corporacion === c ? 'bg-[#0084B4] text-white' : 'text-[#BDB09B] hover:text-[#F8F8F7]'
-                    }`}
-                  >{c}</button>
-                ))}
-              </div>
-              {corporacion === 'CAMARA' && (
-                <div className="flex gap-1 bg-[#414E57] p-1 rounded-lg">
-                  <button
-                    onClick={() => setCircunscripcion('TERRITORIAL')}
-                    className="px-3 py-1 text-[10px] font-bold rounded-md bg-[#0084B4] text-white"
-                  >
-                    Territorial (Antioquia)
-                  </button>
-                </div>
-              )}
-            </div>
+            <button
+              onClick={fetchData}
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#00A4C2]/50 bg-[#00A4C2]/15 px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-[#00A4C2]/25"
+            >
+              <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+              Actualizar
+            </button>
           </div>
         </header>
 
-        <main className="max-w-7xl mx-auto p-4 space-y-6">
+        <main className="mx-auto max-w-7xl space-y-6 p-4">
+          {error && (
+            <Card className="border-red-500/50 p-4 text-sm text-red-100">
+              {error}
+            </Card>
+          )}
 
-          {/* KPIs */}
-          <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Card className="border-l-4 border-l-[#F1AA41]">
-              <p className="text-[10px] text-[#BDB09B] font-bold uppercase tracking-widest">Escrutado</p>
-              <h2 className="text-3xl font-black text-white mt-1 tabular-nums">{pctMesas.toFixed(2)}%</h2>
-              <p className="text-[11px] text-[#BDB09B] mt-1">
-                {(statsNac.mesas_informadas || 0).toLocaleString('es-CO')} mesas informadas
-              </p>
-            </Card>
-            <Card className="border-l-4 border-l-[#00B6CD]">
-              <p className="text-[10px] text-[#BDB09B] font-bold uppercase tracking-widest">Votos Válidos</p>
-              <h2 className="text-3xl font-black text-white mt-1 tabular-nums">
-                {totalVotos > 0 ? (totalVotos / 1_000_000).toFixed(2) + 'M' : '—'}
-              </h2>
-              <p className="text-[11px] text-[#BDB09B] mt-1">Nacional</p>
-            </Card>
-            <Card className="border-l-4 border-l-[#414E57]">
-              <p className="text-[10px] text-[#BDB09B] font-bold uppercase tracking-widest">Participación</p>
-              <h2 className="text-3xl font-black text-white mt-1 tabular-nums">{pctParticipacion}%</h2>
-              <p className="text-[11px] text-[#BDB09B] mt-1">
-                Avance {ctrlCorp?.ultimo_avance_num ?? '—'}
-              </p>
-            </Card>
-            <Card className="border-l-4 border-l-yellow-500">
-              <p className="text-[10px] text-[#BDB09B] font-bold uppercase tracking-widest">{corporacion === 'CAMARA' && circunscripcion === 'TERRITORIAL' ? 'Líder Antioquia' : 'Líder'}</p>
-              <h2 className="text-base font-black text-white mt-1 leading-tight truncate">
-                {leader ? getNombre(leader.cod_partido) : (loading ? 'Cargando...' : 'Sin datos')}
-              </h2>
-              <p className="text-[11px] text-[#BDB09B] mt-1">
-                {leader?.curules ? `${leader.curules} curules` : leader ? `${(leader.votos_partido||0).toLocaleString('es-CO')} votos` : '—'}
-              </p>
-            </Card>
+          <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            {topThree.map((candidate, idx) => (
+              <Card key={candidate.code} className="overflow-hidden">
+                <div className="h-1.5" style={{ backgroundColor: candidate.color }} />
+                <div className="p-5">
+                  <div className="mb-4 flex items-center justify-between">
+                    <span className="rounded-full bg-black/30 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-[#BDB09B]">
+                      Puesto {idx + 1}
+                    </span>
+                    {idx === 0 ? <Trophy size={20} className="text-[#F1AA41]" /> : <Medal size={20} className="text-[#00B6CD]" />}
+                  </div>
+                  <h2 className="text-xl font-black leading-tight text-white">{candidate.name}</h2>
+                  <p className="mt-1 text-xs text-[#BDB09B]">{candidate.party}</p>
+                  <div className="mt-5 flex items-end justify-between gap-3">
+                    <p className="text-3xl font-black tabular-nums text-white">{formatPercent(candidate.percent)}</p>
+                    <p className="pb-1 text-right text-sm font-bold tabular-nums text-[#BDB09B]">{formatNumber(candidate.votes)} votos</p>
+                  </div>
+                </div>
+              </Card>
+            ))}
           </section>
 
-          {/* SEÑAL EN VIVO */}
           <section>
-            <Card className="p-0 border-[#00A4C2]/40 overflow-hidden shadow-[0_0_30px_rgba(6,182,212,0.07)]">
-              <div className="bg-[#414E57]/50 px-4 py-2 flex items-center justify-between">
+            <Card className="overflow-hidden border-[#00A4C2]/40 shadow-[0_0_30px_rgba(6,182,212,0.07)]">
+              <div className="flex items-center justify-between bg-[#414E57]/50 px-4 py-2">
                 <div className="flex items-center gap-2">
-                  <Play size={14} className="text-[#00B6CD] fill-[#00B6CD]" />
-                  <span className="text-[10px] font-black uppercase text-[#F8F8F7] tracking-widest">Señal en Vivo: Telemedellín</span>
+                  <Play size={14} className="fill-[#00B6CD] text-[#00B6CD]" />
+                  <span className="text-[10px] font-black uppercase tracking-widest text-[#F8F8F7]">Señal en vivo: Telemedellín</span>
                 </div>
-                <Badge variant="fuchsia">Live HD</Badge>
+                <span className="rounded border border-[#F1AA41]/40 bg-[#F1AA41]/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#F1AA41]">Live HD</span>
               </div>
               <div className="aspect-video w-full bg-black">
                 <iframe
-                  width="100%" height="100%"
-                  src="https://www.youtube.com/embed/qWqWVzOMgsE?autoplay=0&mute=0&rel=0&modestbranding=1"
+                  width="100%"
+                  height="100%"
+                  src={LIVE_SIGNAL_URL}
                   title="Telemedellín en Vivo"
                   frameBorder="0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -566,273 +328,84 @@ export default function Home() {
             </Card>
           </section>
 
-          {/* CONSULTAS — siempre visible debajo del video */}
-      <ConsultasSection
-        resultados={resConsultas}
-        candidatos={candidatos}
-        loading={loading}
-      />
-
-            {/* RANKING + IA */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <div className="lg:col-span-7 space-y-6">
-              <Card title={`Ranking de Listas — ${corporacion}`}>
-                <div className="flex flex-col sm:flex-row gap-3 mb-6">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3 top-2.5 text-[#BDB09B]" size={15} />
-                    <input
-                      type="text"
-                      placeholder="Buscar partido..."
-                      value={searchTerm}
-                      onChange={e => setSearchTerm(e.target.value)}
-                      className="w-full bg-[#414E57] border border-[#414E57] rounded-lg pl-9 pr-3 py-2 text-sm outline-none focus:ring-1 focus:ring-[#00A4C2]"
-                    />
-                  </div>
-                </div>
-
-                {loading ? (
-                  <div className="flex items-center justify-center h-40 text-[#BDB09B] text-sm">
-                    Cargando resultados...
-                  </div>
-                ) : resFiltrado.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-40 text-[#BDB09B] text-sm gap-2">
-                    <span>Sin datos disponibles</span>
-                    <span className="text-xs">Los datos aparecerán cuando inicie el conteo</span>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {resFiltrado.map((item, idx) => {
-                      const pct = resOrdenado[0]?.votos_partido
-                        ? (item.votos_partido / resOrdenado[0].votos_partido) * 100
-                        : 0
-                      return (
-                        <div key={item.cod_partido} className="space-y-1.5">
-                          <div className="flex justify-between text-xs font-medium">
-                            <span className="text-[#F8F8F7]">{idx + 1}. {getNombre(item.cod_partido)}</span>
-                            <span className="text-[#BDB09B] tabular-nums">
-                              {(item.votos_partido || 0).toLocaleString('es-CO')} votos
-                              {item.curules != null ? ` · ${item.curules} cur.` : ''}
-                            </span>
-                          </div>
-                          <div className="h-3 bg-[#414E57] rounded-full overflow-hidden">
-                            <div
-                              className="h-full rounded-full transition-all duration-1000"
-                              style={{ width: `${pct}%`, backgroundColor: getColor(item.cod_partido) }}
-                            />
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
-              </Card>
-            </div>
-
-            <div className="lg:col-span-5 space-y-6">
-              {/* BRIEF IA */}
-              <div className="bg-gradient-to-br from-[#00629E] to-[#00A4C2] p-[1px] rounded-xl">
-                <div className="bg-[#414E57] rounded-xl overflow-hidden">
-                  <div className="px-4 py-3 border-b border-white/5 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Zap size={15} className="text-[#F1AA41]" />
-                      <h3 className="text-xs font-bold text-white uppercase tracking-widest">Brief IA</h3>
-                    </div>
-                    <div className="flex gap-1">
-                      <button onClick={() => speak(briefText)} className="p-1.5 hover:bg-white/10 rounded-md text-[#BDB09B]"><Volume2 size={15} /></button>
-                      <button onClick={() => navigator.clipboard?.writeText(briefText)} className="p-1.5 hover:bg-white/10 rounded-md text-[#BDB09B]"><Copy size={15} /></button>
-                    </div>
-                  </div>
-                  <div className="p-4">
-                    <p className="text-sm leading-relaxed text-[#F8F8F7] italic">"{briefText}"</p>
-                  </div>
+          <section className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+            <Card className="p-5 lg:col-span-6">
+              <div className="mb-5 flex items-center gap-3">
+                <Users size={18} className="text-[#F1AA41]" />
+                <div>
+                  <h3 className="text-sm font-black uppercase tracking-widest text-white">Todos los candidatos</h3>
+                  <p className="text-[10px] uppercase tracking-widest text-[#BDB09B]">Votación nacional y porcentaje</p>
                 </div>
               </div>
+              <div className="space-y-5">
+                {loading && candidates.length === 0 ? (
+                  <p className="py-10 text-center text-sm text-[#BDB09B]">Cargando resultados...</p>
+                ) : candidates.map((candidate, idx) => (
+                  <CandidateRow key={candidate.code} candidate={candidate} leaderVotes={leaderVotes} rank={idx + 1} />
+                ))}
+              </div>
+            </Card>
 
-              {/* ASISTENTE */}
-              <Card title="Asistente de Datos">
-                <div className="h-[260px] flex flex-col">
-                  <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
-                    {messages.map((m, i) => (
-                      <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                        <div className={`max-w-[85%] rounded-xl px-3 py-2 text-xs leading-relaxed ${
-                          m.role === 'user'
-                            ? 'bg-[#0084B4] text-white'
-                            : 'bg-[#414E57] text-[#F8F8F7] border border-[#414E57]'
-                        }`}>{m.text}</div>
-                      </div>
-                    ))}
+            <div className="space-y-6 lg:col-span-6">
+              <Card className="p-5">
+                <div className="mb-4 flex items-center gap-3">
+                  <Trophy size={18} className="text-[#F1AA41]" />
+                  <h3 className="text-sm font-black uppercase tracking-widest text-white">Candidato con mayor votación</h3>
+                </div>
+                {leader ? <CandidateRow candidate={leader} leaderVotes={leaderVotes} rank={1} /> : <p className="text-sm text-[#BDB09B]">Sin datos aún</p>}
+              </Card>
+
+              <Card className="p-5">
+                <div className="mb-4 flex items-center gap-3">
+                  <Medal size={18} className="text-[#00B6CD]" />
+                  <h3 className="text-sm font-black uppercase tracking-widest text-white">Candidato en segundo lugar</h3>
+                </div>
+                {second ? <CandidateRow candidate={second} leaderVotes={leaderVotes} rank={2} /> : <p className="text-sm text-[#BDB09B]">Sin datos aún</p>}
+              </Card>
+
+              <Card className="p-5">
+                <div className="mb-4 flex items-center gap-3">
+                  <Activity size={18} className="text-[#00B6CD]" />
+                  <div>
+                    <h3 className="text-sm font-black uppercase tracking-widest text-white">Avance nacional</h3>
+                    <p className="text-[10px] uppercase tracking-widest text-[#BDB09B]">
+                      Última lectura: {lastUpdate ? lastUpdate.toLocaleTimeString('es-CO') : '—'}
+                    </p>
                   </div>
-                  <form onSubmit={handleSend} className="mt-3 flex gap-2">
-                    <input
-                      type="text"
-                      placeholder="¿Quién va primero? ¿Cuántas mesas?..."
-                      value={inputValue}
-                      onChange={e => setInputValue(e.target.value)}
-                      className="flex-1 bg-[#414E57] border border-[#414E57] rounded-lg px-3 py-2 text-xs outline-none focus:ring-1 focus:ring-[#00A4C2]"
-                    />
-                    <button type="submit" className="p-2 bg-[#F1AA41] rounded-lg hover:bg-[#F1AA41]/90 transition-colors">
-                      <Send size={15} />
-                    </button>
-                  </form>
+                </div>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-[#BDB09B]">Mesas informadas</p>
+                    <p className="mt-1 text-2xl font-black text-white">{formatPercent(national?.Porc_Mesas_Informadas)}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-[#BDB09B]">Votos válidos</p>
+                    <p className="mt-1 text-2xl font-black text-white">{formatNumber(national?.Votos_Validos)}</p>
+                  </div>
                 </div>
               </Card>
-            </div>
-          </div>
-
-          {/* HEMICICLO — solo para Senado */}
-          {corporacion === 'SENADO' && (
-            <section>
-              <Card>
-                <div className="flex flex-col md:flex-row items-center justify-between mb-6 border-b border-[#414E57] pb-4">
-                  <div className="flex items-center gap-3">
-                    <LayoutGrid className="text-[#F1AA41]" size={20} />
-                    <div>
-                      <h3 className="font-bold text-base text-white">POSIBLE CONFORMACIÓN DEL SENADO</h3>
-                      <p className="text-[10px] text-[#BDB09B] uppercase tracking-widest">Distribución de Escaños — Cifra Repartidora</p>
-                    </div>
-                  </div>
-                  <div className="mt-3 md:mt-0 flex gap-1 bg-[#414E57] p-1 rounded-lg">
-                    <button onClick={() => setTableMode('grafico')} className={`px-4 py-1.5 text-[10px] rounded-md font-bold transition-all ${tableMode==='grafico' ? 'bg-[#00629E] text-[#00B6CD]' : 'text-[#BDB09B]'}`}>GRÁFICO</button>
-                    <button onClick={() => setTableMode('tabla')} className={`px-4 py-1.5 text-[10px] rounded-md font-bold transition-all ${tableMode==='tabla' ? 'bg-[#00629E] text-[#00B6CD]' : 'text-[#BDB09B]'}`}>TABLA</button>
-                  </div>
-                </div>
-
-                {tableMode === 'grafico' ? (
-                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-                    <div className="lg:col-span-7 bg-[#000000]/30 rounded-2xl border border-[#414E57]/50">
-                      <Hemiciclo partidos={resConCurules || []} getColor={getColor} />
-                    </div>
-                    <div className="lg:col-span-5 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {!resConCurules.length ? (
-                        <div className="col-span-2 flex items-center justify-center h-32 text-[#BDB09B] text-sm border border-[#414E57] rounded-xl bg-[#414E57]/40">
-                          {loading ? 'Calculando curules...' : 'Sin datos aún, mostrando hemiciclo base'}
-                        </div>
-                      ) : (
-                        [...resConCurules].sort((a,b)=>b.curules-a.curules).map(p => (
-                          <div key={p.cod_partido} className="flex items-center justify-between p-3 bg-[#414E57]/80 border border-[#414E57] rounded-xl">
-                            <div className="flex items-center gap-2">
-                              <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: getColor(p.cod_partido) }} />
-                              <p className="text-[11px] font-semibold text-[#F8F8F7] truncate max-w-[90px]">{getNombre(p.cod_partido)}</p>
-                            </div>
-                            <span className="text-base font-black text-white tabular-nums">{p.curules || 0}</span>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse text-sm">
-                      <thead>
-                        <tr className="border-b border-[#414E57] text-[10px] text-[#BDB09B] uppercase font-bold">
-                          <th className="px-4 py-3">#</th>
-                          <th className="px-4 py-3">Partido</th>
-                          <th className="px-4 py-3 text-right">Votos</th>
-                          <th className="px-4 py-3 text-right">%</th>
-                          <th className="px-4 py-3 text-right">Curules</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {[...resConCurules].sort((a,b)=>b.curules-a.curules).map((p, i) => (
-                          <tr key={p.cod_partido} className="border-b border-[#414E57]/50 hover:bg-[#414E57]/30 transition-colors">
-                            <td className="px-4 py-3 text-[#BDB09B]">{i+1}</td>
-                            <td className="px-4 py-3 font-semibold flex items-center gap-2">
-                              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: getColor(p.cod_partido) }} />
-                              {getNombre(p.cod_partido)}
-                            </td>
-                            <td className="px-4 py-3 text-right tabular-nums text-[#F8F8F7]">
-                              {(p.votos_partido||0).toLocaleString('es-CO')}
-                            </td>
-                            <td className="px-4 py-3 text-right tabular-nums text-[#BDB09B]">
-                              {totalVotos ? ((p.votos_partido/totalVotos)*100).toFixed(2) : '0.00'}%
-                            </td>
-                            <td className="px-4 py-3 text-right font-black text-[#00B6CD] text-base tabular-nums">
-                              {p.curules || 0}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </Card>
-            </section>
-          )}
-
-          {/* CONVERSACIÓN EN REDES — nube de palabras */}
-          <section className="pb-10">
-            <div className="flex items-center gap-3 mb-5">
-              <div className="p-2 bg-[#F1AA41]/10 rounded-lg">
-                <Cloud className="text-[#F1AA41]" size={18} />
-              </div>
-              <div>
-                <h3 className="font-bold text-base text-white">CONVERSACIÓN EN REDES</h3>
-                <p className="text-[10px] text-[#BDB09B] uppercase tracking-widest">Palabras más mencionadas en Instagram y X</p>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {[
-                { tipo: 'instagram', palabras: palabrasInstagram, color: '#F1AA41', borderColor: 'border-[#F1AA41]/30', bgColor: 'bg-[#F1AA41]/10', label: 'Instagram' },
-                { tipo: 'twitter',   palabras: palabrasTwitter,   color: '#00B6CD', borderColor: 'border-[#00A4C2]/30', bgColor: 'bg-[#00A4C2]/10', label: 'X (Twitter)' }
-              ].map(({ tipo, palabras, color, borderColor, bgColor, label }) => (
-                <div key={tipo} className={`bg-[#414E57]/55 border rounded-xl p-5 ${borderColor}`}>
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg ${bgColor}`}>
-                        {tipo === 'instagram'
-                          ? <Instagram size={18} className="text-[#F1AA41]" />
-                          : <Twitter size={18} className="text-[#00B6CD]" />}
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-[#F8F8F7]">{label}</p>
-                        <p className="text-[10px] text-[#BDB09B] uppercase tracking-widest">{palabras.length} palabras trending</p>
-                      </div>
-                    </div>
-                    <Badge variant={tipo === 'instagram' ? 'fuchsia' : 'cyan'}>En vivo</Badge>
-                  </div>
-                  {palabras.length === 0 ? (
-                    <div className="flex items-center justify-center h-40 text-[#BDB09B]">
-                      <p className="text-xs uppercase tracking-widest">Sin datos aún...</p>
-                    </div>
-                  ) : (
-                    <div className="flex flex-wrap gap-2 justify-center items-center min-h-[160px] p-2">
-                      {palabras.map((item, i) => {
-                        const colors = tipo === 'instagram'
-                          ? ['#F1AA41','#F5C06A','#E8940F','#FDD78A','#D4820A','#FAC84E','#C97A00','#FFE0A0']
-                          : ['#00B6CD','#00A4C2','#22d3ee','#67e8f9','#0891b2','#a5f3fc','#0e7490','#06b6d4'];
-                        const maxFreq = Math.max(...palabras.map(p => p.frecuencia));
-                        const minFreq = Math.min(...palabras.map(p => p.frecuencia));
-                        const normalized = maxFreq === minFreq ? 0.5 : (item.frecuencia - minFreq) / (maxFreq - minFreq);
-                        const fontSize = Math.round(10 + normalized * 26);
-                        return (
-                          <span
-                            key={item.palabra}
-                            style={{ fontSize: `${fontSize}px`, color: colors[i % colors.length] }}
-                            className="font-bold leading-tight hover:opacity-70 transition-opacity cursor-default select-none"
-                            title={`${item.palabra}: ${item.frecuencia} menciones`}
-                          >
-                            {item.palabra}
-                          </span>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              ))}
             </div>
           </section>
 
+          <section>
+            <Card className="p-5">
+              <div className="mb-5">
+                <h3 className="text-sm font-black uppercase tracking-widest text-white">Mapa de Colombia por ganador departamental</h3>
+                <p className="mt-1 text-[10px] uppercase tracking-widest text-[#BDB09B]">Departamentos coloreados según el candidato líder</p>
+              </div>
+              <ColombiaMap winnersByDepartment={winnersByDepartment} />
+            </Card>
+          </section>
         </main>
 
-        <footer className="max-w-7xl mx-auto px-4 py-8 text-center border-t border-[#414E57]/50">
-          <p className="text-[10px] uppercase font-bold tracking-widest text-[#BDB09B]">
+        <footer className="mx-auto max-w-7xl border-t border-[#414E57]/50 px-4 py-8 text-center">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-[#BDB09B]">
             Telemedellín Digital · Centro Digital Electoral 2026
           </p>
-          <p className="text-[10px] text-[#BDB09B] mt-1">
-            Datos oficiales: Registraduría Nacional del Estado Civil
+          <p className="mt-1 text-[10px] text-[#BDB09B]">
+            Datos oficiales de preconteo: Registraduría Nacional del Estado Civil. Información no vinculante.
           </p>
         </footer>
-
       </div>
     </>
   )
