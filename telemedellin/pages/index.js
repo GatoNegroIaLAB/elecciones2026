@@ -262,6 +262,11 @@ export default function Home() {
                 <p className="text-[10px] font-bold uppercase tracking-widest text-[#BDB09B]">Votos válidos</p>
                 <p className="mt-1 text-2xl font-black text-white">{formatNumber(national?.votos_validos)}</p>
               </div>
+              <div className="col-span-2 rounded-lg bg-black/20 p-3 sm:col-span-1">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-[#BDB09B]">Voto en blanco</p>
+                <p className="mt-1 text-2xl font-black text-white">{formatNumber(national?.votos_blancos)}</p>
+                <p className="mt-0.5 text-[11px] font-bold text-[#BDB09B]">{formatPercent(national?.porc_votos_blancos)}</p>
+              </div>
             </div>
           </Card>
 
