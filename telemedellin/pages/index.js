@@ -5,21 +5,22 @@ import { COLOMBIA_DEPARTMENTS, COLOMBIA_MAP_VIEWBOX } from '../lib/colombia-map'
 
 const LIVE_SIGNAL_URL = 'https://www.youtube.com/embed/qWqWVzOMgsE?autoplay=0&mute=0&rel=0&modestbranding=1'
 const DEFAULT_COLOR = '#64748b'
+const driveImage = id => `https://lh3.googleusercontent.com/d/${id}=s640`
 
 const CANDIDATES = {
-  '00026': { name: 'Iván Cepeda Castro', party: 'Movimiento Político Pacto Histórico', color: '#6B2D8B', image: '/candidatos/ivan-cepeda.png' },
-  '01004': { name: 'Claudia López', party: 'Con Claudia Imparables', color: '#2A7A4A', image: '/candidatos/claudia-lopez.png' },
-  '01001': { name: 'Raúl Santiago Botero Jaramillo', party: 'Romper el Sistema', color: '#D4A017', image: '/candidatos/raul-botero.png' },
-  '01003': { name: 'Abelardo De La Espriella', party: 'Defensores de la Patria', color: '#1E4D8C', image: '/candidatos/abelardo-de-la-espriella.png' },
-  '03001': { name: 'Óscar Mauricio Lizcano Arango', party: 'Coalición F.A.M.I.L.I.A', color: '#2C6FA8', image: '/candidatos/mauricio-lizcano.png' },
-  '00020': { name: 'Miguel Uribe Londoño', party: 'Partido Demócrata Colombiano', color: '#C0252A', image: '/candidatos/miguel-uribe-londono.png' },
-  '01002': { name: 'Sondra Macollins Garvin Pinto', party: 'Sondra Macollins, La Abogada de Hierro', color: '#B02020', image: '/candidatos/sondra-macollins.png' },
-  '00022': { name: 'Roy Leonardo Barreras Montealegre', party: 'Partido Político La Fuerza', color: '#C06040', image: '/candidatos/roy-barreras.png' },
-  '01006': { name: 'Carlos Eduardo Caicedo Omar', party: 'Caicedo', color: '#1E6A98', image: '/candidatos/carlos-caicedo.png' },
-  '00021': { name: 'Gustavo Matamoros Camacho', party: 'Partido Ecologista Colombiano', color: '#5A7A3A', image: '/candidatos/gustavo-matamoros.png' },
-  '00009': { name: 'Paloma Valencia Laserna', party: 'Partido Centro Democrático', color: '#1A3A6B', image: '/candidatos/paloma-valencia.png' },
-  '00015': { name: 'Sergio Fajardo Valderrama', party: 'Partido Político Dignidad & Compromiso', color: '#4A9A5A', image: '/candidatos/sergio-fajardo.png' },
-  '01005': { name: 'Luis Gilberto Murillo Urrutia', party: 'La Oportunidad Es Colombia', color: '#3A8A6A', image: '/candidatos/luis-gilberto-murillo.png' },
+  '00026': { name: 'Iván Cepeda Castro', party: 'Movimiento Político Pacto Histórico', color: '#6B2D8B', image: driveImage('1foKgArgt66Wn70f_t85-DiOc9JrCotAZ') },
+  '01004': { name: 'Claudia López', party: 'Con Claudia Imparables', color: '#2A7A4A', image: driveImage('1gZuV57Bh6JDXBkOmU_nzDy3EMewyoUVH') },
+  '01001': { name: 'Raúl Santiago Botero Jaramillo', party: 'Romper el Sistema', color: '#D4A017', image: driveImage('1SWlAQ3L7Dh_qSe9KCKfiV5mZGnmN2Mpf') },
+  '01003': { name: 'Abelardo De La Espriella', party: 'Defensores de la Patria', color: '#1E4D8C', image: driveImage('1N5ReM7XbzwA77aGK8j7WACeD2U7QjUC9') },
+  '03001': { name: 'Óscar Mauricio Lizcano Arango', party: 'Coalición F.A.M.I.L.I.A', color: '#2C6FA8', image: driveImage('14jZhR5vt47kF3gKyAxWDbN7aJBduPJjz') },
+  '00020': { name: 'Miguel Uribe Londoño', party: 'Partido Demócrata Colombiano', color: '#C0252A', image: driveImage('1r4TV_NEH7-v9pFXK7_FSODz0HepzSGSP') },
+  '01002': { name: 'Sondra Macollins Garvin Pinto', party: 'Sondra Macollins, La Abogada de Hierro', color: '#B02020', image: driveImage('1a9roL84Sj6eYOV-KTrmbqjyJKgq5fUIi') },
+  '00022': { name: 'Roy Leonardo Barreras Montealegre', party: 'Partido Político La Fuerza', color: '#C06040', image: driveImage('1c6FvzrzAKCO1Xrp7GP-BYnPLsgC-hK0r') },
+  '01006': { name: 'Carlos Eduardo Caicedo Omar', party: 'Caicedo', color: '#1E6A98', image: driveImage('1RDI6NQTVVC9TLzJBHrqEOurUjIMbg3ul') },
+  '00021': { name: 'Gustavo Matamoros Camacho', party: 'Partido Ecologista Colombiano', color: '#5A7A3A', image: driveImage('11G_QO1Fq7qzGQXRHT8-TV393mAKKhO8Y') },
+  '00009': { name: 'Paloma Valencia Laserna', party: 'Partido Centro Democrático', color: '#1A3A6B', image: driveImage('1YB-PV6OWMQpoSfM9AiCiobeP1zFF0jst') },
+  '00015': { name: 'Sergio Fajardo Valderrama', party: 'Partido Político Dignidad & Compromiso', color: '#4A9A5A', image: driveImage('1ZohyUqIdwTlcqhPMu6V_3JRPZgL4lIOa') },
+  '01005': { name: 'Luis Gilberto Murillo Urrutia', party: 'La Oportunidad Es Colombia', color: '#3A8A6A', image: driveImage('1MCMehk-E-HytarkHANH1AYRyylTClmkg') },
 }
 
 function formatNumber(value) {
