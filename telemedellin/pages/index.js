@@ -296,9 +296,9 @@ export default function Home() {
                     </div>
                     <h2 className="text-lg font-black leading-tight text-white sm:text-xl">{candidate.name}</h2>
                     <p className="mt-1 text-xs text-[#BDB09B]">{candidate.party}</p>
-                    <div className="mt-5 flex items-end justify-between gap-3">
+                    <div className="mt-5 space-y-1">
                       <p className="text-2xl font-black tabular-nums text-white sm:text-3xl">{formatPercent(candidate.percent)}</p>
-                      <p className="pb-1 text-right text-sm font-bold tabular-nums text-[#BDB09B]">{formatNumber(candidate.votes)} votos</p>
+                      <p className="text-sm font-bold tabular-nums text-[#BDB09B]">{formatNumber(candidate.votes)} votos</p>
                     </div>
                   </div>
                 </div>
