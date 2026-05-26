@@ -2,6 +2,10 @@
 
 App Next.js para visualización de resultados electorales en tiempo real, conectada a Supabase.
 
+## Estado operativo
+
+Ver handoff del 2026-05-26 en [`docs/PROJECT_HANDOFF.md`](docs/PROJECT_HANDOFF.md).
+
 ## Setup
 
 ### 1. Clonar e instalar
