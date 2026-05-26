@@ -10,36 +10,42 @@ Fecha: 2026-05-26
 - Cambio de alcance confirmado: el proyecto pasa de elecciones de Congreso a elecciones de Presidente.
 - Apify sale del alcance activo salvo que se decida reincorporarlo.
 
-## Estado local
+## Estado actual
 
-- Repo: `vicentezuluaga-TM/elecciones2026`.
+- Repo actual: `GatoNegroIaLAB/elecciones2026`.
+- Repo anterior/historico: `vicentezuluaga-TM/elecciones2026`.
 - App: `telemedellin/`.
 - Framework: Next.js 14.2.3, Pages Router.
 - Rama revisada: `main`.
 - Build local: OK.
-- Dev server usado: `http://localhost:3001`.
+- Vercel production: `https://elecciones2026-beta.vercel.app`.
+- Flujo activo: `Registraduria -> /api/ingest-registraduria -> Supabase pr_* -> /api/results-live -> Web`.
 
 ## Servicios conectados
 
 - Supabase:
-  - URL configurada en `.env.local`.
-  - Publishable key configurada en `.env.local`.
-  - Service key configurada en `.env.local`.
-  - Verificacion de lectura OK en:
-    - `control_avances`
-    - `avances_resultados`
-    - `cat_partidos`
-    - `cat_candidatos`
-    - `cat_divipol`
-    - `palabras_nube`
+  - Project ref: `poocwplikbzatcxmcglt`.
+  - URL, anon key y service key configuradas en Vercel Production.
+  - Modelo presidencial nuevo aislado con prefijo `pr_*`.
+  - Verificacion de lectura OK en `/api/results-live`.
+  - Verificacion de escritura/ingesta OK en `/api/ingest-registraduria`.
 
 - Registraduria:
   - Base URL: `https://descargas.registraduria.gov.co/`.
-  - Basic Auth configurado en `.env.local`.
+  - Basic Auth configurado en Vercel Production.
   - Verificacion de credenciales contra la base: OK.
   - URL presidencial verificada por proxy:
     - `https://descargas.registraduria.gov.co/PR/0000/DEPRINDEX0000.json`
   - `/api/proxy-boletin` responde JSON valido para esa URL.
+  - Primera ingesta presidencial manual validada.
+
+## Documentacion tecnica
+
+- Flujo completo: `docs/PRESIDENTIAL_DATA_FLOW.md`.
+- Migracion Supabase: `supabase/migrations/20260526163000_presidential_results_schema.sql`.
+- Logica compartida de ingesta: `lib/presidential-data.js`.
+- Endpoint privado de ingesta: `pages/api/ingest-registraduria.js`.
+- Endpoint publico para la web: `pages/api/results-live.js`.
 
 ## Variables locales
 
@@ -53,23 +59,25 @@ El archivo `.env.local` no se debe commitear. Variables configuradas o esperadas
 - `REGISTRADURIA_PASS`
 - `REVALIDATE_TOKEN`
 
-Pendientes si se confirma que siguen aplicando:
+Pendientes si se confirma que vuelven al alcance:
 
 - `APIFY_WEBHOOK_TOKEN`
 - `APIFY_API_TOKEN`
 
-Nota: `REGISTRADURIA_PASS` debe quedar entre comillas en `.env.local` porque contiene `#`.
+Nota: las credenciales reales no deben quedar en GitHub ni en documentacion.
 
 ## Pendiente inmediato
 
-1. Migrar UI y logica de Congreso a Presidente.
-2. Revisar tablas/campos requeridos para datos presidenciales.
-3. Ajustar endpoint/procesamiento desde el indice `PR`.
-4. Retirar referencias activas a Apify si no se usara.
-5. Ejecutar cambios pequenos y verificar con build en cada paso.
+1. No automatizar la ingesta todavia.
+2. Activar ingesta automatica la manana de elecciones.
+3. Elegir mecanismo: Vercel Cron si el plan lo permite, o n8n/EasyPanel para mayor control.
+4. Durante pruebas, disparar ingesta manual con `Authorization: Bearer <REVALIDATE_TOKEN>`.
+5. Revisar visualmente la landing con datos reales cuando empiecen los avances oficiales.
 
 ## Riesgos tecnicos
 
 - `npm audit` reporta vulnerabilidades por `next@14.2.3` y `postcss`.
 - Conviene planear un upgrade controlado de Next 14.2.x antes de produccion.
 - No guardar secretos en GitHub ni en documentacion.
+- Las credenciales compartidas por chat deben rotarse si Registraduria lo permite.
+- El avance `0000` puede contener datos de prueba/prejornada; no tratarlo como resultado definitivo.
