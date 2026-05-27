@@ -1,6 +1,6 @@
 # Flujo de datos presidencial 2026
 
-Fecha de corte: 2026-05-26
+Fecha de corte: 2026-05-27
 
 ## Resumen
 
@@ -12,10 +12,12 @@ Registraduria -> Ingesta Vercel -> Supabase pr_* -> API Vercel -> Web
 
 La ingesta automatica queda pendiente para la manana de elecciones. Por ahora se dispara manualmente con token privado.
 
+Estado actual: la conexion real con Registraduria esta restaurada, el simulador existe en codigo pero esta apagado en Vercel Production, y la web lee el ultimo estado publicado en Supabase.
+
 ## Servicios
 
 - Fuente oficial: `https://descargas.registraduria.gov.co/`
-- Indice presidencial: `https://descargas.registraduria.gov.co/PR/0000/DEPRINDEX0000.json`
+- Indice presidencial inicial: `https://descargas.registraduria.gov.co/PR/0000/DEPRINDEX0000.json`
 - Vercel production: `https://elecciones2026-beta.vercel.app`
 - Supabase project ref: `poocwplikbzatcxmcglt`
 - GitHub: `GatoNegroIaLAB/elecciones2026`
@@ -54,13 +56,32 @@ Authorization: Bearer <REVALIDATE_TOKEN>
 
 Proceso:
 
-1. Lee el indice presidencial `DEPRINDEX0000.json`.
-2. Resuelve los archivos `URL_Json_COLOMBIA` y `URL_Json_DEPARTAMENTOS`.
-3. Descarga JSON/GZIP desde Registraduria con Basic Auth.
-4. Guarda payloads crudos en `pr_raw_payloads`.
-5. Normaliza cabeceras en `pr_boletins`, incluido `VOTOS EN BLANCO` desde `Detalle_Partidos_Totales`.
-6. Normaliza votos por partido/candidato en `pr_results`.
-7. Actualiza `pr_sync_state`.
+1. Busca el ultimo indice presidencial disponible siguiendo el patron `/PR/0000/DEPRINDEX0000.json`, `/PR/0001/DEPRINDEX0001.json`, etc.
+2. Lee el indice mas reciente encontrado.
+3. Resuelve los archivos `URL_Json_COLOMBIA` y `URL_Json_DEPARTAMENTOS` relativos al indice elegido.
+4. Descarga JSON/GZIP desde Registraduria con Basic Auth.
+5. Guarda payloads crudos en `pr_raw_payloads`.
+6. Normaliza cabeceras en `pr_boletins`, incluido `VOTOS EN BLANCO` desde `Detalle_Partidos_Totales`.
+7. Normaliza votos por partido/candidato en `pr_results`.
+8. Actualiza `pr_sync_state`.
+
+### `POST /api/simulate-registraduria`
+
+Endpoint privado para ensayo. Requiere:
+
+```text
+Authorization: Bearer <REVALIDATE_TOKEN>
+ENABLE_ELECTION_SIMULATION=true
+```
+
+Modos:
+
+- `mode=tick`: genera un avance sintetico nuevo con datos aleatorios, usando candidatos reales del catalogo y departamentos del mapa.
+- `mode=reset`: elimina solo los boletines/payloads generados por el simulador (`simulator://registraduria/...`) y devuelve el estado al ultimo boletin no simulado disponible.
+
+Los avances simulados empiezan en `9001` para quedar por encima de los datos de prueba actuales. No activar este endpoint sin tener claro si se esta apuntando a staging o produccion.
+
+En produccion normal `ENABLE_ELECTION_SIMULATION` debe estar ausente o apagada. En ese estado el endpoint responde `403 Election simulation is disabled`.
 
 ### `GET /api/proxy-boletin`
 
@@ -110,6 +131,23 @@ Primera ingesta manual validada:
 
 El avance inicial de prueba es `0000`; puede contener datos de prueba o estructura previa a jornada. En produccion debe tratarse como preconteo informativo, no vinculante.
 
+La ingesta no debe asumir que `0000` sera siempre el ultimo indice. En cada ejecucion consulta el ultimo avance conocido en `pr_sync_state` y prueba los siguientes indices secuenciales hasta encontrar el primer `404`. El ultimo indice existente es el que se procesa.
+
+## Estado verificado al 2026-05-27
+
+Despues del simulacro se limpio Supabase de datos sinteticos, se apago el simulador y se ejecuto de nuevo ingesta real desde Registraduria.
+
+- Estado: `ok`.
+- Avance: `0`.
+- Boletin: `0`.
+- Mesas instaladas: `122020`.
+- Mesas informadas: `0`.
+- Votos validos: `0`.
+- Candidatos nacionales: `13`.
+- Departamentos: `34`.
+
+Este estado corresponde a fuente previa/no activa de jornada. No debe interpretarse como resultado electoral definitivo.
+
 ## Frontend
 
 Archivo principal: `pages/index.js`.
@@ -119,8 +157,8 @@ La landing llama `GET /api/results-live` cada 60 segundos. Renderiza:
 - tres cards principales con foto para las mayores votaciones;
 - lista nacional completa;
 - avance nacional, incluido voto en blanco;
-- senal en vivo;
-- mapa de Colombia por ganador departamental.
+- senal en vivo de YouTube con autoplay en mute y boton superpuesto para activar/desactivar audio;
+- mapa de Colombia por mayor votacion departamental.
 
 El mapa usa `lib/colombia-map.js`. `CONSULADOS` se excluye del mapa porque no es departamento geografico.
 
@@ -147,6 +185,7 @@ Escritorio:
 - No se guardan fotos de candidatos como binarios en GitHub.
 - Rotulos de las tres cards: `Presidencia`, `Curul en Senado y Camara`, `Tercera mayor votacion`.
 - Las cards principales no usan iconos en el rotulo.
+- El iframe de YouTube usa `autoplay=1`, `mute=1`, `enablejsapi=1` y `playsinline=1`; el boton de audio envia `mute` / `unMute` con `postMessage` a la API del iframe.
 
 ## Operacion manual
 
@@ -176,12 +215,48 @@ Opciones recomendadas:
 
 Recomendacion: usar n8n/EasyPanel si necesitamos control fino de frecuencia, pausas y alertas.
 
+## Ensayo con datos aleatorios
+
+Para simular una jornada donde llegan datos cada minuto:
+
+1. Activar `ENABLE_ELECTION_SIMULATION=true` en el entorno que se va a probar.
+2. Desplegar el endpoint `/api/simulate-registraduria`.
+3. Ejecutar un tick manual:
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer $REVALIDATE_TOKEN" \
+  https://elecciones2026-beta.vercel.app/api/simulate-registraduria
+```
+
+4. Dejarlo corriendo cada minuto:
+
+```bash
+SIMULATION_URL=https://elecciones2026-beta.vercel.app/api/simulate-registraduria \
+SIMULATION_INTERVAL_SECONDS=60 \
+SIMULATION_TICKS=30 \
+REVALIDATE_TOKEN=$REVALIDATE_TOKEN \
+npm run simulate:registraduria
+```
+
+5. Al terminar, limpiar los datos sinteticos:
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer $REVALIDATE_TOKEN" \
+  "https://elecciones2026-beta.vercel.app/api/simulate-registraduria?mode=reset"
+```
+
+Resultado del ensayo del 2026-05-27: ver `docs/SIMULATION_AUDIT_2026-05-27.md`.
+
 ## Seguridad
 
 - No guardar credenciales reales en GitHub ni docs.
 - `SUPABASE_SERVICE_KEY`, `REGISTRADURIA_USER`, `REGISTRADURIA_PASS` y `REVALIDATE_TOKEN` solo deben vivir como variables cifradas.
 - Las credenciales compartidas por chat deben rotarse si el proveedor lo permite.
 - El endpoint de ingesta debe seguir protegido; sin token debe responder `401`.
+- El endpoint de simulacion debe seguir protegido por token y por `ENABLE_ELECTION_SIMULATION=true`; sin bandera activa debe responder `403`.
+- Despues de cambiar variables de entorno en Vercel, hacer redeploy para que el runtime tome el cambio.
 
 ## Verificaciones realizadas
 
@@ -191,3 +266,4 @@ Recomendacion: usar n8n/EasyPanel si necesitamos control fino de frecuencia, pau
 - Ingesta manual: `200`.
 - `GET /api/results-live`: `200`.
 - Supabase poblado con estado `ok`.
+- Simulador apagado tras ensayo: `403`.

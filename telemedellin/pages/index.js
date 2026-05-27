@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Head from 'next/head'
-import { Activity, Play, Users } from 'lucide-react'
+import { Activity, Play, Users, Volume2, VolumeX } from 'lucide-react'
 import { COLOMBIA_DEPARTMENTS, COLOMBIA_MAP_VIEWBOX } from '../lib/colombia-map'
 
-const LIVE_SIGNAL_URL = 'https://www.youtube.com/embed/qWqWVzOMgsE?autoplay=0&mute=0&rel=0&modestbranding=1'
+const LIVE_SIGNAL_URL = 'https://www.youtube.com/embed/qWqWVzOMgsE?autoplay=1&mute=1&rel=0&modestbranding=1&enablejsapi=1&playsinline=1'
 const DEFAULT_COLOR = '#64748b'
 const driveImage = id => `https://lh3.googleusercontent.com/d/${id}=s640`
 const TOP_CARD_LABELS = ['Presidencia', 'Curul en Senado y Cámara', 'Tercera mayor votación']
@@ -104,7 +104,7 @@ const ColombiaMap = ({ winnersByDepartment }) => (
       <svg
         viewBox={COLOMBIA_MAP_VIEWBOX}
         role="img"
-        aria-label="Mapa de Colombia por ganador departamental"
+        aria-label="Mapa de Colombia por mayor votación departamental"
         className="h-auto w-full max-h-[680px]"
       >
         <rect width="100%" height="100%" rx="16" fill="rgba(0,0,0,0.18)" />
@@ -151,6 +151,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [lastUpdate, setLastUpdate] = useState(null)
+  const [liveMuted, setLiveMuted] = useState(true)
 
   const fetchData = useCallback(async () => {
     try {
@@ -196,6 +197,17 @@ export default function Home() {
       clearInterval(id)
     }
   }, [])
+
+  const toggleLiveAudio = useCallback(() => {
+    const iframe = document.getElementById('telemedellin-live-player')
+    const action = liveMuted ? 'unMute' : 'mute'
+    iframe?.contentWindow?.postMessage(JSON.stringify({
+      event: 'command',
+      func: action,
+      args: [],
+    }), 'https://www.youtube.com')
+    setLiveMuted(!liveMuted)
+  }, [liveMuted])
 
   const topThree = candidates.slice(0, 3)
   const leaderVotes = candidates[0]?.votes || 0
@@ -315,8 +327,9 @@ export default function Home() {
                 </div>
                 <span className="rounded border border-[#F1AA41]/40 bg-[#F1AA41]/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#F1AA41]">Live HD</span>
               </div>
-              <div className="aspect-video w-full bg-black">
+              <div className="relative aspect-video w-full bg-black">
                 <iframe
+                  id="telemedellin-live-player"
                   width="100%"
                   height="100%"
                   src={LIVE_SIGNAL_URL}
@@ -325,6 +338,15 @@ export default function Home() {
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
                 />
+                <button
+                  type="button"
+                  onClick={toggleLiveAudio}
+                  aria-label={liveMuted ? 'Activar audio de la señal en vivo' : 'Silenciar señal en vivo'}
+                  title={liveMuted ? 'Activar audio' : 'Silenciar audio'}
+                  className="absolute bottom-3 right-3 z-10 grid h-11 w-11 place-items-center rounded-full border border-white/30 bg-black/70 text-white shadow-lg backdrop-blur transition hover:bg-black focus:outline-none focus:ring-2 focus:ring-[#00B6CD] sm:bottom-4 sm:right-4 sm:h-12 sm:w-12"
+                >
+                  {liveMuted ? <VolumeX size={22} /> : <Volume2 size={22} />}
+                </button>
               </div>
             </Card>
           </section>
@@ -349,7 +371,7 @@ export default function Home() {
           <section className="order-5 lg:col-span-12 lg:order-5">
             <Card className="p-5">
               <div className="mb-5">
-                <h3 className="text-sm font-black uppercase tracking-widest text-white">Mapa de Colombia por ganador departamental</h3>
+                <h3 className="text-sm font-black uppercase tracking-widest text-white">Mapa de Colombia por mayor votación departamental</h3>
                 <p className="mt-1 text-[10px] uppercase tracking-widest text-[#BDB09B]">Departamentos coloreados según el candidato líder</p>
               </div>
               <ColombiaMap winnersByDepartment={winnersByDepartment} />

@@ -1,8 +1,8 @@
 import {
-  PRESIDENTIAL_INDEX_URL,
   createServiceClient,
   fetchRegistraduriaJson,
   getBoletins,
+  resolveLatestPresidentialIndex,
   resolveRegistraduriaUrl,
   storeRawPayload,
   upsertBoletin,
@@ -31,18 +31,18 @@ export default async function handler(req, res) {
       .from('pr_sync_state')
       .upsert({
         key: 'presidential_live',
-        current_index_url: PRESIDENTIAL_INDEX_URL,
         status: 'fetching',
         last_error: null,
         updated_at: startedAt,
       }, { onConflict: 'key' })
 
-    const index = await fetchRegistraduriaJson(PRESIDENTIAL_INDEX_URL)
+    const latestIndex = await resolveLatestPresidentialIndex(supabase)
+    const index = latestIndex.payload
     const avance = index.Avance || {}
-    const nationalUrl = resolveRegistraduriaUrl(avance.URL_Json_COLOMBIA)
-    const departmentsUrl = resolveRegistraduriaUrl(avance.URL_Json_DEPARTAMENTOS)
+    const nationalUrl = resolveRegistraduriaUrl(avance.URL_Json_COLOMBIA, latestIndex.url)
+    const departmentsUrl = resolveRegistraduriaUrl(avance.URL_Json_DEPARTAMENTOS, latestIndex.url)
 
-    await storeRawPayload(supabase, PRESIDENTIAL_INDEX_URL, 'index', Number(avance.Numero || 0), index)
+    await storeRawPayload(supabase, latestIndex.url, 'index', latestIndex.avanceNum, index)
 
     const [nationalPayload, departmentsPayload] = await Promise.all([
       fetchRegistraduriaJson(nationalUrl),
@@ -50,8 +50,8 @@ export default async function handler(req, res) {
     ])
 
     await Promise.all([
-      storeRawPayload(supabase, nationalUrl, 'national', Number(avance.Numero || 0), nationalPayload),
-      storeRawPayload(supabase, departmentsUrl, 'departments', Number(avance.Numero || 0), departmentsPayload),
+      storeRawPayload(supabase, nationalUrl, 'national', latestIndex.avanceNum, nationalPayload),
+      storeRawPayload(supabase, departmentsUrl, 'departments', latestIndex.avanceNum, departmentsPayload),
     ])
 
     const nationalResults = []
@@ -70,9 +70,9 @@ export default async function handler(req, res) {
       .from('pr_sync_state')
       .upsert({
         key: 'presidential_live',
-        current_avance_num: latest.avanceNum || Number(avance.Numero || 0),
+        current_avance_num: latest.avanceNum || latestIndex.avanceNum,
         current_boletin_num: latest.boletinNum || Number(avance.Boletin || 0),
-        current_index_url: PRESIDENTIAL_INDEX_URL,
+        current_index_url: latestIndex.url,
         current_national_url: nationalUrl,
         current_departments_url: departmentsUrl,
         status: 'ok',

@@ -3,7 +3,9 @@ import https from 'https'
 import zlib from 'zlib'
 import { createClient } from '@supabase/supabase-js'
 
-export const PRESIDENTIAL_INDEX_URL = 'https://descargas.registraduria.gov.co/PR/0000/DEPRINDEX0000.json'
+export const PRESIDENTIAL_INDEX_BASE_URL = 'https://descargas.registraduria.gov.co/PR/'
+export const PRESIDENTIAL_INDEX_URL = presidentialIndexUrlForAvance(0)
+export const DEFAULT_INDEX_PROBE_LIMIT = 250
 
 export function createServiceClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -41,6 +43,15 @@ export function resolveRegistraduriaUrl(pathOrUrl, baseUrl = PRESIDENTIAL_INDEX_
   return new URL(pathOrUrl, baseUrl).toString()
 }
 
+export function formatAvanceNum(value) {
+  return String(toInteger(value)).padStart(4, '0')
+}
+
+export function presidentialIndexUrlForAvance(value) {
+  const avance = formatAvanceNum(value)
+  return `${PRESIDENTIAL_INDEX_BASE_URL}${avance}/DEPRINDEX${avance}.json`
+}
+
 export async function fetchRegistraduriaJson(url) {
   const user = process.env.REGISTRADURIA_USER
   const pass = process.env.REGISTRADURIA_PASS
@@ -70,7 +81,10 @@ export async function fetchRegistraduriaJson(url) {
 
     function handleResponse(response) {
       if (response.statusCode !== 200) {
-        reject(new Error(`Registraduria HTTP ${response.statusCode}`))
+        const error = new Error(`Registraduria HTTP ${response.statusCode}`)
+        error.statusCode = response.statusCode
+        error.url = url
+        reject(error)
         return
       }
 
@@ -90,6 +104,60 @@ export async function fetchRegistraduriaJson(url) {
       response.on('error', reject)
     }
   })
+}
+
+async function fetchRegistraduriaJsonIfExists(url) {
+  try {
+    return await fetchRegistraduriaJson(url)
+  } catch (error) {
+    if (error.statusCode === 404) return null
+    throw error
+  }
+}
+
+export async function resolveLatestPresidentialIndex(supabase, options = {}) {
+  const probeLimit = toInteger(options.probeLimit || process.env.REGISTRADURIA_INDEX_PROBE_LIMIT || DEFAULT_INDEX_PROBE_LIMIT)
+  const { data, error } = await supabase
+    .from('pr_sync_state')
+    .select('current_avance_num')
+    .eq('key', 'presidential_live')
+    .maybeSingle()
+
+  if (error) throw error
+
+  const startAvance = Math.max(0, toInteger(data?.current_avance_num))
+  let latest = null
+  let currentAvance = startAvance
+
+  while (currentAvance <= probeLimit) {
+    const url = presidentialIndexUrlForAvance(currentAvance)
+    const payload = await fetchRegistraduriaJsonIfExists(url)
+
+    if (!payload) {
+      if (latest) break
+
+      currentAvance += 1
+      continue
+    }
+
+    const payloadAvance = toInteger(payload?.Avance?.Numero ?? currentAvance)
+    latest = {
+      avanceNum: Math.max(currentAvance, payloadAvance),
+      url,
+      payload,
+    }
+
+    currentAvance = latest.avanceNum + 1
+  }
+
+  if (latest) return latest
+
+  const fallbackUrl = PRESIDENTIAL_INDEX_URL
+  return {
+    avanceNum: 0,
+    url: fallbackUrl,
+    payload: await fetchRegistraduriaJson(fallbackUrl),
+  }
 }
 
 export function getBoletins(payload) {
