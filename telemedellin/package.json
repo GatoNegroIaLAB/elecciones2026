@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "simulate:registraduria": "node scripts/run-registraduria-simulator.mjs"
+    "simulate:registraduria": "node scripts/run-registraduria-simulator.mjs",
+    "import:registraduria-basics": "node scripts/import-registraduria-basics.mjs"
   },
   "dependencies": {
     "next": "14.2.3",

@@ -1,0 +1,13 @@
+00009PARTIDO CENTRO DEMOCRÁTICO                                                                                                                                                                              N
+00015PARTIDO POLÍTICO DIGNIDAD & COMPROMISO                                                                                                                                                                  N
+00020PARTIDO DEMÓCRATA COLOMBIANO                                                                                                                                                                            N
+00021PARTIDO ECOLOGISTA COLOMBIANO                                                                                                                                                                           N
+00022PARTIDO POLÍTICO LA FUERZA                                                                                                                                                                              N
+00026MOVIMIENTO POLÍTICO PACTO HISTÓRICO                                                                                                                                                                     N
+01001ROMPER EL SISTEMA                                                                                                                                                                                       N
+01002SONDRA MACOLLINS, LA ABOGADA DE HIERRO                                                                                                                                                                  N
+01003DEFENSORES DE LA PATRIA                                                                                                                                                                                 N
+01004CON CLAUDIA IMPARABLES                                                                                                                                                                                  N
+01005LA OPORTUNIDAD ES COLOMBIA                                                                                                                                                                              N
+01006CAICEDO                                                                                                                                                                                                 N
+03001COALICIÓN F.A.M.I.L.I.A                                                                                                                                                                                 N

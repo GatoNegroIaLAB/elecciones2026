@@ -1,0 +1,13 @@
+00100000000000260011IVÁN                                              CEPEDA CASTRO                                     79262397       M01
+00100000000010040021CLAUDIA                                           LÓPEZ                                             51992648       F03
+00100000000010010031RAÚL SANTIAGO                                     BOTERO JARAMILLO                                  98567762       M04
+00100000000010030041ABELARDO                                          DE LA ESPRIELLA                                   11004242       M05
+00100000000030010051ÓSCAR MAURICIO                                    LIZCANO ARANGO                                    79960663       M06
+00100000000000200061MIGUEL                                            URIBE LONDOÑO                                     8319134        M07
+00100000000010020071SONDRA MACOLLINS                                  GARVIN PINTO                                      66921526       F08
+00100000000000220081ROY LEONARDO                                      BARRERAS MONTEALEGRE                              79289575       M09
+00100000000010060091CARLOS EDUARDO                                    CAICEDO OMAR                                      85448338       M10
+00100000000000210101GUSTAVO                                           MATAMOROS CAMACHO                                 79140442       M11
+00100000000000090111PALOMA                                            VALENCIA LASERNA                                  25280205       F12
+00100000000000150121SERGIO                                            FAJARDO VALDERRAMA                                70546658       M13
+00100000000010050131LUIS GILBERTO                                     MURILLO URRUTIA                                   11794488       M14
