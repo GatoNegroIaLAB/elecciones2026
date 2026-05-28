@@ -19,6 +19,7 @@ Fecha: 2026-05-27
 - Rama revisada: `main`.
 - Build local: OK.
 - Vercel production: `https://elecciones2026-beta.vercel.app`.
+- Root Directory correcto en Vercel: `telemedellin`.
 - Flujo activo: `Registraduria -> /api/ingest-registraduria -> Supabase pr_* -> /api/results-live -> Web`.
 - Ultimo deploy validado al cierre del 2026-05-27: landing presidencial con flujo Supabase, indice progresivo de Registraduria, simulador apagado, autoplay de YouTube en mute con boton de audio y titulo actualizado del mapa.
 
