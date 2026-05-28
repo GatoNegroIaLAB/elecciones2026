@@ -5,7 +5,7 @@ import { createClient } from '@supabase/supabase-js'
 
 export const PRESIDENTIAL_INDEX_BASE_URL = 'https://descargas.registraduria.gov.co/PR/'
 export const PRESIDENTIAL_INDEX_URL = presidentialIndexUrlForAvance(0)
-export const DEFAULT_INDEX_PROBE_LIMIT = 250
+export const DEFAULT_INDEX_PROBE_LIMIT = 500
 
 export function createServiceClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
