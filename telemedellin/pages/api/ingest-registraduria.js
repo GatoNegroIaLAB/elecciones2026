@@ -41,18 +41,28 @@ export default async function handler(req, res) {
     const avance = index.Avance || {}
     const nationalUrl = resolveRegistraduriaUrl(avance.URL_Json_COLOMBIA, latestIndex.url)
     const departmentsUrl = resolveRegistraduriaUrl(avance.URL_Json_DEPARTAMENTOS, latestIndex.url)
+    const capitalsUrl = avance.URL_Json_CAPITALES
+      ? resolveRegistraduriaUrl(avance.URL_Json_CAPITALES, latestIndex.url)
+      : null
 
     await storeRawPayload(supabase, latestIndex.url, 'index', latestIndex.avanceNum, index)
 
-    const [nationalPayload, departmentsPayload] = await Promise.all([
+    const [nationalPayload, departmentsPayload, capitalsPayload] = await Promise.all([
       fetchRegistraduriaJson(nationalUrl),
       fetchRegistraduriaJson(departmentsUrl),
+      capitalsUrl ? fetchRegistraduriaJson(capitalsUrl) : Promise.resolve(null),
     ])
 
-    await Promise.all([
+    const rawPayloadWrites = [
       storeRawPayload(supabase, nationalUrl, 'national', latestIndex.avanceNum, nationalPayload),
       storeRawPayload(supabase, departmentsUrl, 'departments', latestIndex.avanceNum, departmentsPayload),
-    ])
+    ]
+
+    if (capitalsUrl && capitalsPayload) {
+      rawPayloadWrites.push(storeRawPayload(supabase, capitalsUrl, 'capitals', latestIndex.avanceNum, capitalsPayload))
+    }
+
+    await Promise.all(rawPayloadWrites)
 
     const nationalResults = []
     for (const boletin of getBoletins(nationalPayload)) {
@@ -64,7 +74,12 @@ export default async function handler(req, res) {
       departmentResults.push(await upsertBoletin(supabase, boletin, departmentsUrl))
     }
 
-    const latest = nationalResults[0] || departmentResults[0] || {}
+    const capitalResults = []
+    for (const boletin of getBoletins(capitalsPayload)) {
+      capitalResults.push(await upsertBoletin(supabase, boletin, capitalsUrl))
+    }
+
+    const latest = nationalResults[0] || departmentResults[0] || capitalResults[0] || {}
     const fetchedAt = new Date().toISOString()
     await supabase
       .from('pr_sync_state')
@@ -87,8 +102,10 @@ export default async function handler(req, res) {
       fetched_at: fetchedAt,
       national_boletins: nationalResults.length,
       department_boletins: departmentResults.length,
+      capital_boletins: capitalResults.length,
       national_results: nationalResults.reduce((sum, item) => sum + item.resultCount, 0),
       department_results: departmentResults.reduce((sum, item) => sum + item.resultCount, 0),
+      capital_results: capitalResults.reduce((sum, item) => sum + item.resultCount, 0),
     })
   } catch (error) {
     await supabase
