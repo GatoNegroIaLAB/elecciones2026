@@ -98,6 +98,81 @@ const CandidateRow = ({ candidate, leaderVotes, rank }) => {
   )
 }
 
+const NationalProgressCard = ({ lastUpdate, national }) => (
+  <Card className="p-4 sm:p-5">
+    <div className="mb-4 flex items-center gap-3">
+      <Activity size={18} className="text-[#00B6CD]" />
+      <div>
+        <h3 className="text-sm font-black uppercase tracking-widest text-white">Avance nacional</h3>
+        <p className="text-[10px] uppercase tracking-widest text-[#BDB09B]">
+          Última lectura: {lastUpdate ? lastUpdate.toLocaleTimeString('es-CO') : '—'}
+        </p>
+      </div>
+    </div>
+    <div className="grid grid-cols-2 gap-3 text-sm sm:gap-4">
+      <div className="rounded-lg bg-black/20 p-3">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-[#BDB09B]">Mesas informadas</p>
+        <p className="mt-1 text-2xl font-black text-white">{formatPercent(national?.porc_mesas_informadas)}</p>
+      </div>
+      <div className="rounded-lg bg-black/20 p-3">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-[#BDB09B]">Votos válidos</p>
+        <p className="mt-1 text-2xl font-black text-white">{formatNumber(national?.votos_validos)}</p>
+      </div>
+      <div className="col-span-2 rounded-lg bg-black/20 p-3 sm:col-span-1">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-[#BDB09B]">Voto en blanco</p>
+        <p className="mt-1 text-2xl font-black text-white">{formatNumber(national?.votos_blancos)}</p>
+        <p className="mt-0.5 text-[11px] font-bold text-[#BDB09B]">{formatPercent(national?.porc_votos_blancos)}</p>
+      </div>
+    </div>
+  </Card>
+)
+
+const CityVotingCard = ({ cities, loading }) => (
+  <Card className="p-4 sm:p-5">
+    <div className="mb-4">
+      <h3 className="text-sm font-black uppercase tracking-widest text-white">Votación por ciudades</h3>
+      <p className="mt-1 text-[10px] uppercase tracking-widest text-[#BDB09B]">Medellín, Bogotá, Cali y Barranquilla</p>
+    </div>
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1">
+      {loading && cities.length === 0 ? (
+        <p className="py-6 text-sm text-[#BDB09B]">Cargando ciudades...</p>
+      ) : cities.map(city => (
+        <div key={city.key} className="rounded-lg bg-black/20 p-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-sm font-black text-white">{city.name}</p>
+              <p className="mt-0.5 truncate text-[11px] text-[#BDB09B]">
+                {city.winner?.name || 'Sin datos disponibles'}
+              </p>
+            </div>
+            <div className="shrink-0 text-right">
+              <p className="text-sm font-black tabular-nums text-white">
+                {city.winner ? formatPercent(city.winner.percent) : '—'}
+              </p>
+              <p className="text-[11px] text-[#BDB09B]">
+                {city.winner ? formatNumber(city.winner.votes) : '—'}
+              </p>
+            </div>
+          </div>
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-black/35">
+            <div
+              className="h-full rounded-full transition-all duration-700"
+              style={{
+                width: city.winner ? `${Math.max(city.winner.percent, 2)}%` : '0%',
+                backgroundColor: city.winner?.color || DEFAULT_COLOR,
+              }}
+            />
+          </div>
+          <div className="mt-3 flex items-center justify-between gap-3 text-[10px] uppercase tracking-wider text-[#BDB09B]">
+            <span>Mesas: {formatPercent(city.porc_mesas_informadas)}</span>
+            <span>Válidos: {formatNumber(city.votos_validos)}</span>
+          </div>
+        </div>
+      ))}
+    </div>
+  </Card>
+)
+
 const ColombiaMap = ({ winnersByDepartment }) => (
   <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
     <div className="lg:col-span-7">
@@ -147,6 +222,7 @@ const ColombiaMap = ({ winnersByDepartment }) => (
 export default function Home() {
   const [national, setNational] = useState(null)
   const [candidates, setCandidates] = useState([])
+  const [cities, setCities] = useState([])
   const [departments, setDepartments] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -164,6 +240,10 @@ export default function Home() {
       const data = await response.json()
       setNational(data.status || null)
       setCandidates((data.national || []).map(mapResult))
+      setCities((data.cities || []).map(city => ({
+        ...city,
+        winner: city.winner ? mapResult(city.winner) : null,
+      })))
       setDepartments((data.departments || []).map(row => ({
         code: row.codigo_departamento,
         name: row.nombre_departamento,
@@ -258,32 +338,9 @@ export default function Home() {
             </Card>
           )}
 
-          <Card className="order-1 p-4 sm:p-5 lg:col-span-5 lg:order-4">
-            <div className="mb-4 flex items-center gap-3">
-              <Activity size={18} className="text-[#00B6CD]" />
-              <div>
-                <h3 className="text-sm font-black uppercase tracking-widest text-white">Avance nacional</h3>
-                <p className="text-[10px] uppercase tracking-widest text-[#BDB09B]">
-                  Última lectura: {lastUpdate ? lastUpdate.toLocaleTimeString('es-CO') : '—'}
-                </p>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3 text-sm sm:gap-4">
-              <div className="rounded-lg bg-black/20 p-3">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-[#BDB09B]">Mesas informadas</p>
-                <p className="mt-1 text-2xl font-black text-white">{formatPercent(national?.porc_mesas_informadas)}</p>
-              </div>
-              <div className="rounded-lg bg-black/20 p-3">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-[#BDB09B]">Votos válidos</p>
-                <p className="mt-1 text-2xl font-black text-white">{formatNumber(national?.votos_validos)}</p>
-              </div>
-              <div className="col-span-2 rounded-lg bg-black/20 p-3 sm:col-span-1">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-[#BDB09B]">Voto en blanco</p>
-                <p className="mt-1 text-2xl font-black text-white">{formatNumber(national?.votos_blancos)}</p>
-                <p className="mt-0.5 text-[11px] font-bold text-[#BDB09B]">{formatPercent(national?.porc_votos_blancos)}</p>
-              </div>
-            </div>
-          </Card>
+          <div className="order-1 lg:hidden">
+            <NationalProgressCard lastUpdate={lastUpdate} national={national} />
+          </div>
 
           <section className="order-2 grid grid-cols-1 gap-4 md:grid-cols-3 lg:col-span-12 lg:order-1">
             {topThree.map((candidate, idx) => (
@@ -351,7 +408,11 @@ export default function Home() {
             </Card>
           </section>
 
-          <Card className="order-4 p-4 sm:p-5 lg:col-span-7 lg:order-3">
+          <div className="order-4 lg:hidden">
+            <CityVotingCard cities={cities} loading={loading} />
+          </div>
+
+          <Card className="order-5 p-4 sm:p-5 lg:col-span-7 lg:order-3">
             <div className="mb-5 flex items-center gap-3">
               <Users size={18} className="text-[#F1AA41]" />
               <div>
@@ -368,7 +429,12 @@ export default function Home() {
             </div>
           </Card>
 
-          <section className="order-5 lg:col-span-12 lg:order-5">
+          <section className="hidden lg:col-span-5 lg:order-4 lg:flex lg:flex-col lg:gap-5">
+            <NationalProgressCard lastUpdate={lastUpdate} national={national} />
+            <CityVotingCard cities={cities} loading={loading} />
+          </section>
+
+          <section className="order-6 lg:col-span-12 lg:order-5">
             <Card className="p-5">
               <div className="mb-5">
                 <h3 className="text-sm font-black uppercase tracking-widest text-white">Mapa de Colombia por mayor votación departamental</h3>
