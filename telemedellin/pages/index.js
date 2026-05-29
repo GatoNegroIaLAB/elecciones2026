@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import Head from 'next/head'
 import { Activity, Play, Users, Volume2, VolumeX } from 'lucide-react'
 import { COLOMBIA_DEPARTMENTS, COLOMBIA_MAP_VIEWBOX } from '../lib/colombia-map'
+import { getPublicElectionRuntime } from '../lib/election-runtime'
 
 const LIVE_SIGNAL_URL = 'https://www.youtube.com/embed/qWqWVzOMgsE?autoplay=1&mute=1&rel=0&modestbranding=1&enablejsapi=1&playsinline=1'
 const DEFAULT_COLOR = '#64748b'
@@ -31,6 +32,15 @@ function formatNumber(value) {
 function formatPercent(value) {
   const n = Number(String(value ?? 0).replace(',', '.'))
   return Number.isFinite(n) ? `${n.toFixed(2)}%` : '0.00%'
+}
+
+function formatScheduleDate(value) {
+  if (!value) return 'Pendiente de programar'
+  return new Date(value).toLocaleString('es-CO', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+    timeZone: 'America/Bogota',
+  })
 }
 
 function mapResult(row) {
@@ -220,6 +230,7 @@ const ColombiaMap = ({ winnersByDepartment }) => (
 )
 
 export default function Home() {
+  const runtimeConfig = useMemo(() => getPublicElectionRuntime(), [])
   const [national, setNational] = useState(null)
   const [candidates, setCandidates] = useState([])
   const [cities, setCities] = useState([])
@@ -228,6 +239,7 @@ export default function Home() {
   const [error, setError] = useState('')
   const [lastUpdate, setLastUpdate] = useState(null)
   const [liveMuted, setLiveMuted] = useState(true)
+  const [autoRefreshActive, setAutoRefreshActive] = useState(runtimeConfig.mode === 'live')
 
   const fetchData = useCallback(async () => {
     try {
@@ -259,10 +271,36 @@ export default function Home() {
   }, [])
 
   useEffect(() => {
+    let intervalId
+    let timeoutId
+
+    const startPolling = () => {
+      setAutoRefreshActive(true)
+      intervalId = setInterval(fetchData, runtimeConfig.refreshMs)
+    }
+
     fetchData()
-    const id = setInterval(fetchData, 60000)
-    return () => clearInterval(id)
-  }, [fetchData])
+    setAutoRefreshActive(runtimeConfig.mode === 'live')
+
+    if (runtimeConfig.mode === 'live') {
+      startPolling()
+    } else if (runtimeConfig.mode === 'scheduled' && runtimeConfig.autoRefreshStartAt) {
+      const delayMs = new Date(runtimeConfig.autoRefreshStartAt).getTime() - Date.now()
+      if (delayMs <= 0) {
+        startPolling()
+      } else {
+        timeoutId = setTimeout(() => {
+          fetchData()
+          startPolling()
+        }, delayMs)
+      }
+    }
+
+    return () => {
+      if (intervalId) clearInterval(intervalId)
+      if (timeoutId) clearTimeout(timeoutId)
+    }
+  }, [fetchData, runtimeConfig.autoRefreshStartAt, runtimeConfig.mode, runtimeConfig.refreshMs])
 
   useEffect(() => {
     const sendHeight = () => {
@@ -294,6 +332,26 @@ export default function Home() {
   const departmentWinners = useMemo(() => (
     departments.filter(dep => dep.winner && departmentKey(dep.name) !== 'CONSULADOS')
   ), [departments])
+  const refreshStatus = useMemo(() => {
+    if (autoRefreshActive) {
+      return {
+        label: `Actualización automática cada ${Math.round(runtimeConfig.refreshMs / 1000)} segundos`,
+        className: 'border-[#00B6CD]/40 bg-[#00B6CD]/15 text-[#9DEAF4]',
+      }
+    }
+
+    if (runtimeConfig.autoRefreshStartAt) {
+      return {
+        label: `Actualización automática desde ${formatScheduleDate(runtimeConfig.autoRefreshStartAt)}`,
+        className: 'border-[#F1AA41]/50 bg-[#F1AA41]/15 text-[#F6C979]',
+      }
+    }
+
+    return {
+      label: 'Actualización manual previa a jornada',
+      className: 'border-[#BDB09B]/40 bg-white/5 text-[#E7DED0]',
+    }
+  }, [autoRefreshActive, runtimeConfig.autoRefreshStartAt, runtimeConfig.refreshMs])
   const winnersByDepartment = useMemo(() => {
     const map = new Map()
     departmentWinners.forEach(dep => map.set(departmentKey(dep.name), dep))
@@ -325,6 +383,9 @@ export default function Home() {
                 </span>
                 <span className="rounded-md border border-[#F1AA41]/50 bg-[#F1AA41]/15 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide">
                   Presidencia y Vicepresidencia
+                </span>
+                <span className={`rounded-md border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${refreshStatus.className}`}>
+                  {refreshStatus.label}
                 </span>
               </div>
             </div>
