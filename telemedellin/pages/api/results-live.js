@@ -67,6 +67,7 @@ async function loadCityResults(supabase, avanceNum) {
       return { ...city, winner: null }
     }
 
+    const hasVotes = Number(boletin.mesas_informadas || 0) > 0 && Number(boletin.votos_validos || 0) > 0
     const winner = [...(resultsByBoletinId.get(boletin.id) || [])]
       .sort((a, b) => Number(b.votos || 0) - Number(a.votos || 0))[0] || null
 
@@ -80,7 +81,7 @@ async function loadCityResults(supabase, avanceNum) {
       porc_mesas_informadas: boletin.porc_mesas_informadas,
       votos_validos: boletin.votos_validos,
       votos_blancos: boletin.votos_blancos,
-      winner: winner ? {
+      winner: hasVotes && winner ? {
         ...winner,
         nombre_partido: party?.nombre || null,
         color_hex: party?.color_hex || null,
