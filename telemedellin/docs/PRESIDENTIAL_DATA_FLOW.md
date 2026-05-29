@@ -33,6 +33,11 @@ Estas variables viven en Vercel Production. No deben commitearse ni documentarse
 - `REGISTRADURIA_USER`: usuario Basic Auth de Registraduria.
 - `REGISTRADURIA_PASS`: password Basic Auth de Registraduria.
 - `REVALIDATE_TOKEN`: token privado usado para proteger la ingesta.
+- `CRON_SECRET`: token privado que Vercel envia en `Authorization` para los cron jobs.
+- `NEXT_PUBLIC_RESULTS_REFRESH_MS`: frecuencia visible del frontend durante jornada. Valor recomendado: `70000`.
+- `NEXT_PUBLIC_RESULTS_AUTO_REFRESH_START_AT`: fecha/hora ISO 8601 en la que el frontend debe empezar a refrescar solo.
+- `ENABLE_ELECTION_INGEST_CRON`: habilita o apaga la ingesta automatica en Vercel (`true` / `false`).
+- `ELECTION_INGEST_START_AT`: fecha/hora ISO 8601 desde la cual el cron puede ejecutar la ingesta real.
 
 ## Endpoints propios
 
@@ -64,6 +69,22 @@ Proceso:
 6. Normaliza cabeceras en `pr_boletins`, incluido `VOTOS EN BLANCO` desde `Detalle_Partidos_Totales`.
 7. Normaliza votos por partido/candidato en `pr_results`.
 8. Actualiza `pr_sync_state`.
+
+### `GET /api/cron-ingest-registraduria`
+
+Endpoint privado para Vercel Cron.
+
+Requiere:
+
+```text
+Authorization: Bearer <CRON_SECRET>
+```
+
+Comportamiento:
+
+- si `ENABLE_ELECTION_INGEST_CRON=false`, responde `200` con `skipped=true`;
+- si `ELECTION_INGEST_START_AT` esta en el futuro, responde `200` con `skipped=true`;
+- cuando ambas condiciones permiten jornada, ejecuta la misma ingesta real de `POST /api/ingest-registraduria`.
 
 ### `POST /api/simulate-registraduria`
 
@@ -152,7 +173,12 @@ Este estado corresponde a fuente previa/no activa de jornada. No debe interpreta
 
 Archivo principal: `pages/index.js`.
 
-La landing llama `GET /api/results-live` cada 60 segundos. Renderiza:
+La landing siempre hace una lectura inicial de `GET /api/results-live`.
+
+- antes de `NEXT_PUBLIC_RESULTS_AUTO_REFRESH_START_AT`, queda en modo previo a jornada;
+- desde esa fecha/hora, refresca cada `NEXT_PUBLIC_RESULTS_REFRESH_MS` milisegundos.
+
+Renderiza:
 
 - tres cards principales con foto para las mayores votaciones;
 - lista nacional completa;
@@ -205,15 +231,24 @@ curl https://elecciones2026-beta.vercel.app/api/results-live
 
 ## Automatizacion pendiente
 
-No automatizar todavia. Decision actual: activar la ingesta automatica la manana de elecciones.
+La automatizacion ya puede quedar desplegada sin activarse antes de tiempo.
 
 Opciones recomendadas:
 
-- Vercel Cron llamando `/api/ingest-registraduria` cada 30-60 segundos si el plan lo permite.
+- Vercel Cron versionado en `vercel.json`, llamando `/api/cron-ingest-registraduria` cada minuto.
 - Cron externo controlado desde n8n/EasyPanel con header `Authorization`.
 - Job temporal en servidor propio durante la jornada.
 
-Recomendacion: usar n8n/EasyPanel si necesitamos control fino de frecuencia, pausas y alertas.
+Recomendacion:
+
+- si el objetivo es simplicidad operativa, usar Vercel Cron + `ELECTION_INGEST_START_AT`;
+- si se necesita frecuencia exacta distinta de 60 segundos, pausas finas o alertas, usar n8n/EasyPanel.
+
+Configuracion operativa acordada al 2026-05-29:
+
+- Inicio de jornada automatizada: `2026-05-31T16:00:00-05:00` (domingo 31 de mayo de 2026, 4:00 p. m. hora de Colombia).
+- Ingesta por Vercel Cron: cada `1` minuto.
+- Refresco visible del frontend: cada `70` segundos.
 
 ## Ensayo con datos aleatorios
 
