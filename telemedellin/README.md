@@ -4,7 +4,9 @@ App Next.js para visualización de resultados electorales en tiempo real, conect
 
 ## Estado operativo
 
-Ver handoff del 2026-05-26 en [`docs/PROJECT_HANDOFF.md`](docs/PROJECT_HANDOFF.md).
+- Estado general y handoff operativo: [`docs/PROJECT_HANDOFF.md`](docs/PROJECT_HANDOFF.md)
+- Flujo técnico presidencial: [`docs/PRESIDENTIAL_DATA_FLOW.md`](docs/PRESIDENTIAL_DATA_FLOW.md)
+- Estado de alistamiento para jornada al 2026-05-29: [`docs/ELECTION_READINESS_2026-05-29.md`](docs/ELECTION_READINESS_2026-05-29.md)
 
 ## Setup
 
@@ -17,8 +19,15 @@ npm install
 Copia `.env.local.example` a `.env.local` y completa:
 - `NEXT_PUBLIC_SUPABASE_URL` — URL de tu proyecto Supabase
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` — Anon key de Supabase
+- `SUPABASE_SERVICE_KEY` — Service key para ingesta y lecturas server-side
 - `REGISTRADURIA_USER` — Usuario Basic Auth de la Registraduría
 - `REGISTRADURIA_PASS` — Password Basic Auth de la Registraduría
+- `REVALIDATE_TOKEN` — Token de ingesta manual
+- `CRON_SECRET` — Token de autorización para Vercel Cron
+- `NEXT_PUBLIC_RESULTS_REFRESH_MS` — Frecuencia de refresco del frontend en jornada
+- `NEXT_PUBLIC_RESULTS_AUTO_REFRESH_START_AT` — Inicio de refresco automático visible
+- `ENABLE_ELECTION_INGEST_CRON` — Habilita o apaga la ingesta automática
+- `ELECTION_INGEST_START_AT` — Inicio real permitido para la ingesta automática
 
 ### 3. Desarrollo local
 ```bash
@@ -33,6 +42,31 @@ Configura las mismas variables de entorno en el dashboard de Vercel.
 
 ## Endpoints API
 
+### `GET /api/results-live`
+Endpoint público que consume la landing. Lee desde Supabase y devuelve:
+- `status`
+- `national`
+- `departments`
+- `cities`
+
+### `POST /api/ingest-registraduria`
+Endpoint privado de ingesta manual.
+
+Requiere:
+```text
+Authorization: Bearer <REVALIDATE_TOKEN>
+```
+
+### `GET /api/cron-ingest-registraduria`
+Endpoint privado para Vercel Cron.
+
+Requiere:
+```text
+Authorization: Bearer <CRON_SECRET>
+```
+
+Si la jornada no ha empezado o la automatización está apagada, responde `200` con `skipped=true`.
+
 ### `GET /api/proxy-boletin?url=<URL>`
 Descarga y descomprime un boletín `.json.gz` de la Registraduría.
 Usado por n8n en lugar de descargar el `.gz` directamente.
@@ -45,9 +79,19 @@ Usado por n8n en lugar de descargar el `.gz` directamente.
 ### `POST /api/revalidate`
 Invalida el caché de la página principal. Llamado por n8n al detectar un nuevo avance.
 
-## Tablas Supabase requeridas
-- `avances_resultados` — resultados por partido/departamento
-- `control_avances` — último avance procesado por corporación
-- `cat_partidos` — catálogo de partidos
-- `cat_candidatos` — catálogo de candidatos
-- `cat_divipol` — catálogo de puestos de votación
+## Tablas Supabase relevantes hoy
+
+Runtime presidencial:
+- `pr_sync_state`
+- `pr_raw_payloads`
+- `pr_boletins`
+- `pr_results`
+- `pr_catalog_parties`
+- `pr_catalog_candidates`
+- `pr_latest_national_results`
+- `pr_latest_department_winners`
+- `pr_live_status`
+
+Tablas legacy:
+- existen tablas históricas del proyecto anterior, pero ya no son parte del runtime presidencial activo
+- ver endurecimiento y RLS en `docs/ELECTION_READINESS_2026-05-29.md`
