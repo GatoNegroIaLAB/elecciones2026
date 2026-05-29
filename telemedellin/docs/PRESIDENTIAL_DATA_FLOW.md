@@ -1,6 +1,6 @@
 # Flujo de datos presidencial 2026
 
-Fecha de corte: 2026-05-27
+Fecha de corte: 2026-05-29
 
 ## Resumen
 
@@ -10,9 +10,9 @@ La landing presidencial ya no debe depender de consultas directas del navegador 
 Registraduria -> Ingesta Vercel -> Supabase pr_* -> API Vercel -> Web
 ```
 
-La ingesta automatica queda pendiente para la manana de elecciones. Por ahora se dispara manualmente con token privado.
+La ingesta automatica ya queda versionada y validada en comportamiento previo a jornada. La ejecucion real sigue protegida por fecha y token privado.
 
-Estado actual: la conexion real con Registraduria esta restaurada, el simulador existe en codigo pero esta apagado en Vercel Production, y la web lee el ultimo estado publicado en Supabase.
+Estado actual: la conexion real con Registraduria esta restaurada, el simulador existe en codigo pero esta apagado en Vercel Production, la web lee el ultimo estado publicado en Supabase, y el cron de jornada ya responde correctamente en modo `before_start`.
 
 ## Servicios
 
@@ -85,6 +85,24 @@ Comportamiento:
 - si `ENABLE_ELECTION_INGEST_CRON=false`, responde `200` con `skipped=true`;
 - si `ELECTION_INGEST_START_AT` esta en el futuro, responde `200` con `skipped=true`;
 - cuando ambas condiciones permiten jornada, ejecuta la misma ingesta real de `POST /api/ingest-registraduria`.
+
+Prueba real ejecutada el 2026-05-29:
+
+```json
+{
+  "ok": true,
+  "skipped": true,
+  "reason": "before_start",
+  "ingest_start_at": "2026-05-31T21:00:00.000Z"
+}
+```
+
+Esa respuesta confirma que:
+
+- el `CRON_SECRET` se estaba leyendo bien;
+- la proteccion del endpoint funcionaba;
+- la compuerta temporal de jornada estaba activa;
+- la fecha configurada en Colombia se estaba traduciendo correctamente a UTC en runtime.
 
 ### `POST /api/simulate-registraduria`
 
@@ -183,10 +201,17 @@ Renderiza:
 - tres cards principales con foto para las mayores votaciones;
 - lista nacional completa;
 - avance nacional, incluido voto en blanco;
+- votacion por ciudades para Medellin, Bogota, Cali y Barranquilla;
 - senal en vivo de YouTube con autoplay en mute y boton superpuesto para activar/desactivar audio;
 - mapa de Colombia por mayor votacion departamental.
 
 El mapa usa `lib/colombia-map.js`. `CONSULADOS` se excluye del mapa porque no es departamento geografico.
+
+Comportamiento previo a jornada del mapa:
+
+- mientras no haya votos ni mesas reportadas en departamentos, todos los departamentos deben verse en color neutro Telemedellin (`#F1AA41`);
+- la lista departamental debe mostrar `Sin avance reportado`;
+- solo cuando haya votos o mesas efectivas se debe colorear por candidato lider.
 
 ### Layout vigente
 
@@ -195,14 +220,15 @@ Mobile:
 1. Avance nacional.
 2. Tres cards principales.
 3. Senal en vivo.
-4. Todos los candidatos.
-5. Mapa de Colombia.
+4. Votacion por ciudades.
+5. Todos los candidatos.
+6. Mapa de Colombia.
 
 Escritorio:
 
 1. Tres cards principales.
 2. Senal en vivo.
-3. Dos columnas: todos los candidatos a la izquierda y avance nacional a la derecha.
+3. Dos columnas: todos los candidatos a la izquierda; avance nacional y votacion por ciudades a la derecha.
 4. Mapa de Colombia.
 
 ### Fotos y rotulos
@@ -249,6 +275,12 @@ Configuracion operativa acordada al 2026-05-29:
 - Inicio de jornada automatizada: `2026-05-31T16:00:00-05:00` (domingo 31 de mayo de 2026, 4:00 p. m. hora de Colombia).
 - Ingesta por Vercel Cron: cada `1` minuto.
 - Refresco visible del frontend: cada `70` segundos.
+
+## Documento de referencia operativa
+
+Para el estado de alistamiento, cambios del 2026-05-29, commits, deploys y lista de verificacion, ver:
+
+- `docs/ELECTION_READINESS_2026-05-29.md`
 
 ## Ensayo con datos aleatorios
 
