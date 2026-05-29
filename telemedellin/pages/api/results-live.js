@@ -1,10 +1,10 @@
 import { createServiceClient } from '../../lib/presidential-data'
 
 const CITY_TARGETS = [
-  { key: 'medellin', name: 'Medellín', codigo_departamento: '05', codigo_municipio: '001' },
-  { key: 'bogota', name: 'Bogotá', codigo_departamento: '11', codigo_municipio: '001' },
-  { key: 'cali', name: 'Cali', codigo_departamento: '76', codigo_municipio: '001' },
-  { key: 'barranquilla', name: 'Barranquilla', codigo_departamento: '08', codigo_municipio: '001' },
+  { key: 'medellin', name: 'Medellín', codigo_departamento: '01', codigo_municipio: '001' },
+  { key: 'bogota', name: 'Bogotá', codigo_departamento: '16', codigo_municipio: '001' },
+  { key: 'cali', name: 'Cali', codigo_departamento: '31', codigo_municipio: '001' },
+  { key: 'barranquilla', name: 'Barranquilla', codigo_departamento: '03', codigo_municipio: '001' },
 ]
 
 function cityFilter() {
