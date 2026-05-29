@@ -70,8 +70,8 @@ export default async function handler(req, res) {
       .from('pr_sync_state')
       .upsert({
         key: 'presidential_live',
-        current_avance_num: latest.avanceNum || latestIndex.avanceNum,
-        current_boletin_num: latest.boletinNum || Number(avance.Boletin || 0),
+        current_avance_num: latest.avanceNum ?? latestIndex.avanceNum,
+        current_boletin_num: latest.boletinNum ?? Number(avance.Boletin || 0),
         current_index_url: latestIndex.url,
         current_national_url: nationalUrl,
         current_departments_url: departmentsUrl,
