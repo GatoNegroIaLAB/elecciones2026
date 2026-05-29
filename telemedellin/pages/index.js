@@ -6,6 +6,7 @@ import { getPublicElectionRuntime } from '../lib/election-runtime'
 
 const LIVE_SIGNAL_URL = 'https://www.youtube.com/embed/qWqWVzOMgsE?autoplay=1&mute=1&rel=0&modestbranding=1&enablejsapi=1&playsinline=1'
 const DEFAULT_COLOR = '#64748b'
+const TELEMEDELLIN_ORANGE = '#F1AA41'
 const driveImage = id => `https://lh3.googleusercontent.com/d/${id}=s640`
 const TOP_CARD_LABELS = ['Presidencia', 'Curul en Senado y Cámara', 'Tercera mayor votación']
 
@@ -74,6 +75,11 @@ function departmentKey(name = '') {
   if (normalized === 'VALLE') return 'VALLE DEL CAUCA'
   if (normalized === 'NORTE DE SAN') return 'NORTE DE SANTANDER'
   return normalized
+}
+
+function hasDepartmentProgress(department) {
+  if (!department?.winner) return false
+  return department.winner.votes > 0 || department.winner.percent > 0 || Number(department.mesas || 0) > 0
 }
 
 const Card = ({ children, className = '' }) => (
@@ -183,7 +189,7 @@ const CityVotingCard = ({ cities, loading }) => (
   </Card>
 )
 
-const ColombiaMap = ({ winnersByDepartment }) => (
+const ColombiaMap = ({ winnersByDepartment, hasLiveDepartmentData }) => (
   <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
     <div className="lg:col-span-7">
       <svg
@@ -195,20 +201,21 @@ const ColombiaMap = ({ winnersByDepartment }) => (
         <rect width="100%" height="100%" rx="16" fill="rgba(0,0,0,0.18)" />
         {COLOMBIA_DEPARTMENTS.map(department => {
           const winner = winnersByDepartment.get(departmentKey(department.name))
+          const departmentHasProgress = hasDepartmentProgress(winner)
+          const fillColor = departmentHasProgress ? (winner?.winner?.color || DEFAULT_COLOR) : TELEMEDELLIN_ORANGE
+          const title = departmentHasProgress
+            ? `${department.name}: ${winner.winner.name} (${formatPercent(winner.winner.percent)})`
+            : `${department.name}: sin avance reportado`
           return (
             <path
               key={department.code}
               d={department.path}
-              fill={winner?.winner?.color || '#1f2937'}
+              fill={fillColor}
               stroke="#0f172a"
               strokeWidth="0.8"
-              opacity={winner ? 0.94 : 0.45}
+              opacity={departmentHasProgress || !hasLiveDepartmentData ? 0.88 : 0.45}
             >
-              <title>
-                {winner
-                  ? `${department.name}: ${winner.winner.name} (${formatPercent(winner.winner.percent)})`
-                  : `${department.name}: sin datos`}
-              </title>
+              <title>{title}</title>
             </path>
           )
         })}
@@ -218,10 +225,17 @@ const ColombiaMap = ({ winnersByDepartment }) => (
       <div className="grid max-h-[680px] grid-cols-1 gap-2 overflow-y-auto pr-1 custom-scrollbar sm:grid-cols-2 lg:grid-cols-1">
         {[...winnersByDepartment.values()].map(dep => (
           <div key={dep.code} className="rounded-lg border border-[#414E57] bg-black/20 p-3">
-            <div className="mb-2 h-2 rounded-full" style={{ backgroundColor: dep.winner.color || DEFAULT_COLOR }} />
+            <div
+              className="mb-2 h-2 rounded-full"
+              style={{ backgroundColor: hasDepartmentProgress(dep) ? (dep.winner.color || DEFAULT_COLOR) : TELEMEDELLIN_ORANGE }}
+            />
             <p className="text-xs font-black uppercase leading-tight text-white">{dep.name}</p>
-            <p className="mt-1 truncate text-[11px] font-bold text-[#BDB09B]">{dep.winner.name}</p>
-            <p className="mt-2 text-[10px] text-[#BDB09B]">{formatPercent(dep.winner.percent)} · {formatPercent(dep.mesas)} mesas</p>
+            <p className="mt-1 truncate text-[11px] font-bold text-[#BDB09B]">
+              {hasDepartmentProgress(dep) ? dep.winner.name : 'Sin avance reportado'}
+            </p>
+            <p className="mt-2 text-[10px] text-[#BDB09B]">
+              {hasDepartmentProgress(dep) ? formatPercent(dep.winner.percent) : '0.00%'} · {formatPercent(dep.mesas)} mesas
+            </p>
           </div>
         ))}
       </div>
@@ -357,6 +371,10 @@ export default function Home() {
     departmentWinners.forEach(dep => map.set(departmentKey(dep.name), dep))
     return map
   }, [departmentWinners])
+  const hasLiveDepartmentData = useMemo(
+    () => departmentWinners.some(dep => hasDepartmentProgress(dep)),
+    [departmentWinners]
+  )
 
   return (
     <>
@@ -499,9 +517,13 @@ export default function Home() {
             <Card className="p-5">
               <div className="mb-5">
                 <h3 className="text-sm font-black uppercase tracking-widest text-white">Mapa de Colombia por mayor votación departamental</h3>
-                <p className="mt-1 text-[10px] uppercase tracking-widest text-[#BDB09B]">Departamentos coloreados según el candidato líder</p>
+                <p className="mt-1 text-[10px] uppercase tracking-widest text-[#BDB09B]">
+                  {hasLiveDepartmentData
+                    ? 'Departamentos coloreados según el candidato líder'
+                    : 'Todos los departamentos en espera de avance oficial'}
+                </p>
               </div>
-              <ColombiaMap winnersByDepartment={winnersByDepartment} />
+              <ColombiaMap winnersByDepartment={winnersByDepartment} hasLiveDepartmentData={hasLiveDepartmentData} />
             </Card>
           </section>
         </main>
