@@ -1,6 +1,6 @@
 # Elecciones 2026 - Handoff operativo
 
-Fecha: 2026-05-29
+Fecha: 2026-05-31
 
 ## Fuente del proyecto
 
@@ -21,7 +21,7 @@ Fecha: 2026-05-29
 - Vercel production: `https://elecciones2026-beta.vercel.app`.
 - Root Directory correcto en Vercel: `telemedellin`.
 - Flujo activo: `Registraduria -> /api/ingest-registraduria y /api/cron-ingest-registraduria -> Supabase pr_* -> /api/results-live -> Web`.
-- Ultimo deploy validado al cierre del 2026-05-29: landing presidencial con programacion de jornada, card de ciudades, cron protegido, mapa neutro previo a jornada y datos oficiales en cero.
+- Ultimo deploy validado al cierre del 2026-05-31: landing presidencial con programacion de jornada, card de ciudades, cron protegido, mapa neutro previo a jornada, datos oficiales en cero, lock de corrida unica y reescritura atomica por boletin.
 
 ## Servicios conectados
 
@@ -31,6 +31,7 @@ Fecha: 2026-05-29
   - Modelo presidencial nuevo aislado con prefijo `pr_*`.
   - Verificacion de lectura OK en `/api/results-live`.
   - Verificacion de escritura/ingesta OK en `/api/ingest-registraduria`.
+  - Verificacion de concurrencia OK: dos llamadas simultaneas ya no se pisan; una ejecuta y la otra responde `already_running`.
 
 - Registraduria:
   - Base URL: `https://descargas.registraduria.gov.co/`.
@@ -46,11 +47,15 @@ Fecha: 2026-05-29
 ## Documentacion tecnica
 
 - Estado de alistamiento al 2026-05-29: `docs/ELECTION_READINESS_2026-05-29.md`.
+- Bitacora del dia de elecciones al 2026-05-31: `docs/ELECTION_DAY_OPERATIONS_2026-05-31.md`.
 - Flujo completo: `docs/PRESIDENTIAL_DATA_FLOW.md`.
 - Migracion Supabase: `supabase/migrations/20260526163000_presidential_results_schema.sql`.
 - Soporte voto en blanco: `supabase/migrations/20260526182500_add_blank_vote_support.sql`.
 - Endurecimiento superficie presidencial: `supabase/migrations/20260529000500_harden_presidential_runtime_surface.sql`.
 - Endurecimiento tablas legacy: `supabase/migrations/20260529110500_harden_legacy_public_tables.sql`.
+- Lock y escritura atomica de ingesta: `supabase/migrations/20260531111500_ingest_lock_and_atomic_boletin_upsert.sql`.
+- Correccion de ambiguedad en RPC atomico: `supabase/migrations/20260531113000_fix_atomic_boletin_delete_qualifier.sql`.
+- Endurecimiento de `search_path` en funciones de ingesta: `supabase/migrations/20260531114500_harden_ingest_functions_search_path.sql`.
 - Logica compartida de ingesta: `lib/presidential-data.js`.
 - Logica compartida de runtime e ingesta: `lib/election-runtime.js`, `lib/presidential-ingest.js`.
 - Endpoint privado de ingesta: `pages/api/ingest-registraduria.js`.
@@ -151,3 +156,4 @@ Nota: las credenciales reales no deben quedar en GitHub ni en documentacion.
 - El endpoint de simulacion nunca debe quedar activo durante operacion normal.
 - Cambios de variables en Vercel requieren redeploy para afectar el runtime activo.
 - Vercel Cron ejecuta cada minuto, no con granularidad de 70/80 segundos.
+- Si aparece un error de ingesta durante jornada, revisar primero `pr_sync_state.last_error`, luego logs de Vercel y logs de Postgres en Supabase.
