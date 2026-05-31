@@ -4,7 +4,7 @@ import { Activity, Play, Users, Volume2, VolumeX } from 'lucide-react'
 import { COLOMBIA_DEPARTMENTS, COLOMBIA_MAP_VIEWBOX } from '../lib/colombia-map'
 import { getPublicElectionRuntime } from '../lib/election-runtime'
 
-const LIVE_SIGNAL_URL = 'https://www.youtube.com/embed/iq_2WCgDmvM?autoplay=1&mute=1&rel=0&modestbranding=1&enablejsapi=1&playsinline=1'
+const LIVE_SIGNAL_URL = 'https://www.youtube.com/embed/r6EfvKLrSxI?autoplay=1&mute=1&rel=0&modestbranding=1&enablejsapi=1&playsinline=1'
 const DEFAULT_COLOR = '#64748b'
 const TELEMEDELLIN_ORANGE = '#F1AA41'
 const driveImage = id => `https://lh3.googleusercontent.com/d/${id}=s640`
