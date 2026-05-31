@@ -247,41 +247,26 @@ export async function storeRawPayload(supabase, sourceUrl, payloadKind, avanceNu
 
 export async function upsertBoletin(supabase, boletin, sourceUrl) {
   const row = mapBoletinHeader(boletin, sourceUrl)
-  const match = {
-    avance_num: row.avance_num,
-    tipo_boletin: row.tipo_boletin,
-    codigo_departamento: row.codigo_departamento,
-    codigo_municipio: row.codigo_municipio,
-    codigo_comuna: row.codigo_comuna,
+  const rows = getPartyRows(boletin).map(resultRow => ({
+    codigo_partido: String(resultRow.Partido ?? '').trim(),
+    codigo_candidato: resultRow.Candidato ? String(resultRow.Candidato).trim() : null,
+    votos: toInteger(resultRow.Votos),
+    porc_votos: toNumber(resultRow.Porc_Votos ?? resultRow.Porc),
+    raw_result: resultRow,
+  })).filter(resultRow => resultRow.codigo_partido)
+  const { data, error } = await supabase.rpc('pr_upsert_boletin_with_results', {
+    p_boletin: row,
+    p_results: rows,
+  })
+
+  if (error) throw error
+
+  const payload = Array.isArray(data) ? data[0] : data
+
+  return {
+    boletinId: payload?.boletin_id,
+    resultCount: payload?.result_count ?? rows.length,
+    avanceNum: payload?.avance_num ?? row.avance_num,
+    boletinNum: payload?.boletin_num ?? row.boletin_num,
   }
-
-  let query = supabase
-    .from('pr_boletins')
-    .select('id')
-    .eq('avance_num', match.avance_num)
-    .eq('tipo_boletin', match.tipo_boletin)
-
-  for (const key of ['codigo_departamento', 'codigo_municipio', 'codigo_comuna']) {
-    query = match[key] === null ? query.is(key, null) : query.eq(key, match[key])
-  }
-
-  const { data: existing, error: selectError } = await query.maybeSingle()
-  if (selectError) throw selectError
-
-  const result = existing?.id
-    ? await supabase.from('pr_boletins').update(row).eq('id', existing.id).select('id').single()
-    : await supabase.from('pr_boletins').insert(row).select('id').single()
-
-  if (result.error) throw result.error
-
-  const boletinId = result.data.id
-  await supabase.from('pr_results').delete().eq('boletin_id', boletinId)
-
-  const rows = mapResultRows(boletinId, boletin)
-  if (rows.length > 0) {
-    const { error } = await supabase.from('pr_results').insert(rows)
-    if (error) throw error
-  }
-
-  return { boletinId, resultCount: rows.length, avanceNum: row.avance_num, boletinNum: row.boletin_num }
 }
