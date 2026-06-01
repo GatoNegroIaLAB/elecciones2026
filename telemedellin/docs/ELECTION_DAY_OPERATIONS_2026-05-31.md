@@ -323,3 +323,129 @@ El endurecimiento principal pedido para hoy quedo implementado y validado en pro
 - **cada boletin se reescribe de forma atomica**
 
 Eso reduce de forma directa el riesgo mas plausible de bloqueo que se venia arrastrando por el antecedente de Congreso.
+
+## Seguimiento operativo de la tarde - hora Colombia
+
+La referencia horaria operativa de esta etapa fue siempre **America/Bogota (UTC-05:00)**, incluso cuando el entorno del agente estuviera en Europa.
+
+### Revision 16:05 COT
+
+Se ejecuto una revision de solo lectura, sin disparar ingesta manual.
+
+Hallazgos:
+
+- `/api/results-live` respondia `200`
+- se observo por unos minutos un `Registraduria HTTP 404` transitorio
+- el error no era de Vercel ni de Supabase; correspondia a la ventana en la que Registraduria estaba publicando el primer paquete real
+
+Pocos minutos despues el sistema se recompuso sin intervencion manual:
+
+- `status = ok`
+- `last_error = null`
+- primeros datos reales visibles en nacional y departamentos
+
+### Revision 16:32 COT
+
+Se repitio el chequeo de lectura contra API publica, Supabase y Registraduria.
+
+Estado observado:
+
+- `pr_sync_state.status = ok`
+- indice activo en Supabase: `PR/0005/DEPRINDEX0005.json`
+- `GET /api/results-live` con:
+  - `mesas_informadas = 3261`
+  - `porc_mesas_informadas = 2.67`
+  - `votos_validos = 216152`
+- Registraduria respondiendo `200` en el indice vigente
+
+### Revision 17:05 COT
+
+Se hizo una nueva revision integral en modo lectura.
+
+Estado observado:
+
+- API publica: `200`
+- Supabase project `poocwplikbzatcxmcglt`: `ACTIVE_HEALTHY`
+- `pr_sync_state.status = ok`
+- `last_error = null`
+- indice vigente: `PR/0012/DEPRINDEX0012.json`
+- datos publicados en `results-live`:
+  - `mesas_informadas = 86892`
+  - `porc_mesas_informadas = 71.21`
+  - `votos_validos = 15857533`
+
+Conclusion de ese corte:
+
+- la cadena `Registraduria -> Vercel -> Supabase -> /api/results-live -> landing` quedo validada con datos reales y en crecimiento
+
+## Ajustes de contenido hechos en vivo
+
+### Rotulos de cards principales
+
+Se cambio el copy de las dos primeras cards:
+
+- antes:
+  - `Presidencia`
+  - `Curul en Senado y Camara`
+- despues:
+  - `Candidatos a segunda vuelta`
+  - `Candidatos a segunda vuelta`
+
+El tercer rotulo se mantuvo como:
+
+- `Tercera mayor votacion`
+
+### Senal en vivo de YouTube
+
+Durante la jornada se opero el relevo manual de enlaces de YouTube editando la constante:
+
+- `LIVE_SIGNAL_URL` en `pages/index.js`
+
+Eso permitio reemplazar rapidamente la senal embebida sin tocar otras partes del layout.
+
+## Ajuste de cadencia al cierre
+
+Mas tarde, con el avance ya practicamente consolidado, el usuario reporto un avance aproximado de `99.95%`.
+
+Con base en eso se redujo la frecuencia operativa para evitar consultas y refrescos innecesarios:
+
+- frontend:
+  - antes: `70` segundos
+  - despues: `1` hora
+- cron de ingesta:
+  - antes: cada minuto
+  - despues: cada hora
+
+Cambios aplicados:
+
+- `lib/election-runtime.js`
+  - `DEFAULT_RESULTS_REFRESH_MS = 3600000`
+  - se impone una cadencia minima efectiva de `1` hora aunque siga existiendo un valor menor heredado en variables de entorno
+- `vercel.json`
+  - cron actualizado a `0 * * * *`
+
+Resultado:
+
+- despliegues de produccion validados en `READY`
+- la landing queda mucho menos agresiva despues del cierre practico del conteo
+
+## Estado operativo consolidado al cierre del dia
+
+- lock de corrida unica: activo y probado
+- reescritura atomica por boletin: activa y probada
+- Registraduria: accesible con credenciales validas
+- Supabase: sano y sin lock colgado
+- API publica: sana
+- landing: sana
+- cards principales: actualizadas a segunda vuelta
+- senal en vivo: operable por reemplazo rapido de `LIVE_SIGNAL_URL`
+- cadencia final: horaria
+
+## Commits relevantes del cierre
+
+- `dd07dd38bca05326c40e97f3d9588bf73a7b0141`
+  - actualiza el copy de las dos primeras cards a `Candidatos a segunda vuelta`
+- `f5f0b1d29abb8871eef8bfaf466fb9d9dd3baced`
+  - baja el refresco visible del frontend a cadencia horaria
+- `b1b560fceb0f886c7a9b240c33e3ffb602314ba6`
+  - cambia el cron de ingesta a frecuencia horaria en `vercel.json`
