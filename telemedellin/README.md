@@ -14,9 +14,8 @@ App Next.js para visualización de resultados electorales en tiempo real, conect
 - La referencia horaria operativa del proyecto es siempre **Colombia / America/Bogota (UTC-05:00)**.
 - El flujo productivo vigente es: `Registraduria -> Vercel ingest -> Supabase pr_* -> /api/results-live -> landing`.
 - La señal en vivo de YouTube se cambia manualmente editando `LIVE_SIGNAL_URL` en `pages/index.js` y desplegando a production.
-- Al cierre de jornada del 2026-05-31, con el avance ya practicamente consolidado, la cadencia se redujo a:
-  - ingesta automatica: **cada 1 hora**
-  - refresco visible del frontend: **cada 1 hora**
+- Con el escrutinio ya cerrado al **100% de mesas**, se retiro el cron de Vercel y el frontend deja de auto-refrescar al detectar el cierre completo.
+- Los ultimos datos oficiales recibidos quedan congelados como estado final publicado.
 - Los dos primeros rotulos de las cards principales quedaron unificados como: `Candidatos a segunda vuelta`.
 
 ## Setup
@@ -82,9 +81,10 @@ Authorization: Bearer <CRON_SECRET>
 
 Si la jornada no ha empezado o la automatización está apagada, responde `200` con `skipped=true`.
 
-Cadencia vigente versionada en `vercel.json` al cierre del 2026-05-31:
+Estado vigente al cierre del escrutinio:
 
-- `0 * * * *` (una vez por hora)
+- `vercel.json` ya no define crons activos para este proyecto
+- la ingesta automatica quedo deshabilitada para conservar el ultimo corte oficial
 
 ### `GET /api/proxy-boletin?url=<URL>`
 Descarga y descomprime un boletín `.json.gz` de la Registraduría.
