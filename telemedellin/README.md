@@ -9,6 +9,16 @@ App Next.js para visualización de resultados electorales en tiempo real, conect
 - Estado de alistamiento para jornada al 2026-05-29: [`docs/ELECTION_READINESS_2026-05-29.md`](docs/ELECTION_READINESS_2026-05-29.md)
 - Bitácora de operación del día de elecciones 2026-05-31: [`docs/ELECTION_DAY_OPERATIONS_2026-05-31.md`](docs/ELECTION_DAY_OPERATIONS_2026-05-31.md)
 
+### Corte operativo vigente
+
+- La referencia horaria operativa del proyecto es siempre **Colombia / America/Bogota (UTC-05:00)**.
+- El flujo productivo vigente es: `Registraduria -> Vercel ingest -> Supabase pr_* -> /api/results-live -> landing`.
+- La señal en vivo de YouTube se cambia manualmente editando `LIVE_SIGNAL_URL` en `pages/index.js` y desplegando a production.
+- Al cierre de jornada del 2026-05-31, con el avance ya practicamente consolidado, la cadencia se redujo a:
+  - ingesta automatica: **cada 1 hora**
+  - refresco visible del frontend: **cada 1 hora**
+- Los dos primeros rotulos de las cards principales quedaron unificados como: `Candidatos a segunda vuelta`.
+
 ## Setup
 
 ### 1. Clonar e instalar
@@ -29,6 +39,10 @@ Copia `.env.local.example` a `.env.local` y completa:
 - `NEXT_PUBLIC_RESULTS_AUTO_REFRESH_START_AT` — Inicio de refresco automático visible
 - `ENABLE_ELECTION_INGEST_CRON` — Habilita o apaga la ingesta automática
 - `ELECTION_INGEST_START_AT` — Inicio real permitido para la ingesta automática
+
+Valor operativo vigente al cierre de jornada:
+
+- `NEXT_PUBLIC_RESULTS_REFRESH_MS=3600000`
 
 ### 3. Desarrollo local
 ```bash
@@ -67,6 +81,10 @@ Authorization: Bearer <CRON_SECRET>
 ```
 
 Si la jornada no ha empezado o la automatización está apagada, responde `200` con `skipped=true`.
+
+Cadencia vigente versionada en `vercel.json` al cierre del 2026-05-31:
+
+- `0 * * * *` (una vez por hora)
 
 ### `GET /api/proxy-boletin?url=<URL>`
 Descarga y descomprime un boletín `.json.gz` de la Registraduría.
