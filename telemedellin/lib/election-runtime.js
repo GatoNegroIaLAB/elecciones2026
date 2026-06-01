@@ -1,4 +1,4 @@
-const DEFAULT_RESULTS_REFRESH_MS = 70000
+const DEFAULT_RESULTS_REFRESH_MS = 3600000
 
 function parsePositiveInt(value, fallback) {
   const parsed = Number.parseInt(value || '', 10)
@@ -17,7 +17,10 @@ function isTruthy(value) {
 
 export function getPublicElectionRuntime(now = new Date()) {
   const current = now instanceof Date ? now : new Date(now)
-  const refreshMs = parsePositiveInt(process.env.NEXT_PUBLIC_RESULTS_REFRESH_MS, DEFAULT_RESULTS_REFRESH_MS)
+  const refreshMs = Math.max(
+    parsePositiveInt(process.env.NEXT_PUBLIC_RESULTS_REFRESH_MS, DEFAULT_RESULTS_REFRESH_MS),
+    DEFAULT_RESULTS_REFRESH_MS
+  )
   const autoRefreshStartAt = parseDate(process.env.NEXT_PUBLIC_RESULTS_AUTO_REFRESH_START_AT)
 
   let mode = 'manual'
