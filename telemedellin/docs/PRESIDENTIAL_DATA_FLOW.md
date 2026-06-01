@@ -12,7 +12,7 @@ Registraduria -> Ingesta Vercel -> Supabase pr_* -> API Vercel -> Web
 
 La ingesta automatica ya queda versionada y validada en comportamiento previo a jornada. La ejecucion real sigue protegida por fecha y token privado.
 
-Estado actual: la conexion real con Registraduria esta estable, el simulador existe en codigo pero esta apagado en Vercel Production, la web lee el ultimo estado publicado en Supabase, y al cierre de jornada la cadencia operativa quedo reducida a 1 hora.
+Estado actual: la conexion real con Registraduria quedo validada durante jornada, el simulador existe en codigo pero esta apagado en Vercel Production, la web lee el ultimo estado publicado en Supabase y, con el escrutinio completo, el proyecto quedo congelado sobre el ultimo corte oficial.
 
 ## Servicios
 
@@ -34,7 +34,7 @@ Estas variables viven en Vercel Production. No deben commitearse ni documentarse
 - `REGISTRADURIA_PASS`: password Basic Auth de Registraduria.
 - `REVALIDATE_TOKEN`: token privado usado para proteger la ingesta.
 - `CRON_SECRET`: token privado que Vercel envia en `Authorization` para los cron jobs.
-- `NEXT_PUBLIC_RESULTS_REFRESH_MS`: frecuencia visible del frontend durante jornada o post-cierre. Valor operativo vigente al cierre: `3600000`.
+- `NEXT_PUBLIC_RESULTS_REFRESH_MS`: frecuencia visible del frontend durante jornada o post-cierre. Quedo versionada en `3600000`, pero el frontend deja de auto-refrescar cuando detecta `100%` de mesas escrutadas.
 - `NEXT_PUBLIC_RESULTS_AUTO_REFRESH_START_AT`: fecha/hora ISO 8601 en la que el frontend debe empezar a refrescar solo.
 - `ENABLE_ELECTION_INGEST_CRON`: habilita o apaga la ingesta automatica en Vercel (`true` / `false`).
 - `ELECTION_INGEST_START_AT`: fecha/hora ISO 8601 desde la cual el cron puede ejecutar la ingesta real.
@@ -85,7 +85,7 @@ Comportamiento:
 - si `ENABLE_ELECTION_INGEST_CRON=false`, responde `200` con `skipped=true`;
 - si `ELECTION_INGEST_START_AT` esta en el futuro, responde `200` con `skipped=true`;
 - cuando ambas condiciones permiten jornada, ejecuta la misma ingesta real de `POST /api/ingest-registraduria`.
-- al cierre de jornada, la frecuencia versionada en `vercel.json` quedo en `0 * * * *` (una vez por hora).
+- al cierre total del escrutinio, `vercel.json` quedo sin cron activo para conservar el ultimo corte recibido.
 
 Prueba real ejecutada el 2026-05-29:
 
@@ -196,7 +196,7 @@ La landing siempre hace una lectura inicial de `GET /api/results-live`.
 
 - antes de `NEXT_PUBLIC_RESULTS_AUTO_REFRESH_START_AT`, queda en modo previo a jornada;
 - desde esa fecha/hora, refresca cada `NEXT_PUBLIC_RESULTS_REFRESH_MS` milisegundos;
-- al cierre del 2026-05-31, el runtime impone una cadencia minima efectiva de `3600000 ms` para evitar recargas innecesarias cuando el avance ya esta practicamente consolidado.
+- cuando `porc_mesas_informadas >= 100`, el frontend deja de auto-refrescar y reemplaza el copy por `100% de mesas escrutadas`.
 
 Renderiza:
 
@@ -264,20 +264,14 @@ La automatizacion ya puede quedar desplegada sin activarse antes de tiempo.
 
 Opciones recomendadas:
 
-- Vercel Cron versionado en `vercel.json`, llamando `/api/cron-ingest-registraduria` cada hora al cierre de jornada.
-- Cron externo controlado desde n8n/EasyPanel con header `Authorization`.
-- Job temporal en servidor propio durante la jornada.
+- dejar la ingesta automatica deshabilitada y conservar el ultimo corte oficial mientras no se reabra este flujo para otra eleccion;
+- si se recicla este proyecto en el futuro, reactivar cron en `vercel.json` o usar un orquestador externo con `Authorization`.
 
-Recomendacion:
+Configuracion operativa de cierre:
 
-- si el objetivo es simplicidad operativa, usar Vercel Cron + `ELECTION_INGEST_START_AT`;
-- si se necesita frecuencia exacta distinta de 60 segundos, pausas finas o alertas, usar n8n/EasyPanel.
-
-Configuracion operativa acordada al cierre del 2026-05-31:
-
-- Inicio de jornada automatizada: `2026-05-31T16:00:00-05:00` (domingo 31 de mayo de 2026, 4:00 p. m. hora de Colombia).
-- Ingesta por Vercel Cron: cada `1` hora.
-- Refresco visible del frontend: cada `1` hora.
+- Inicio de jornada automatizada usado en esta eleccion: `2026-05-31T16:00:00-05:00`.
+- Ingesta por Vercel Cron: deshabilitada tras el 100% de mesas.
+- Refresco visible del frontend: deshabilitado automaticamente tras el 100% de mesas.
 
 ## Documento de referencia operativa
 
