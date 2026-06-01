@@ -429,6 +429,16 @@ Resultado:
 - despliegues de produccion validados en `READY`
 - la landing queda mucho menos agresiva despues del cierre practico del conteo
 
+## Cierre final de escrutinio
+
+Con el reporte final de `100%` de mesas escrutadas se hizo un cierre tecnico adicional:
+
+- se retiro el cron de `vercel.json`
+- la ingesta automatica deja de ejecutarse desde Vercel
+- la landing deja de auto-refrescar al detectar `porc_mesas_informadas >= 100`
+- el badge de estado cambia a `100% de mesas escrutadas`
+- el sitio conserva el ultimo corte oficial recibido en Supabase como estado final publicado
+
 ## Estado operativo consolidado al cierre del dia
 
 - lock de corrida unica: activo y probado
@@ -439,7 +449,7 @@ Resultado:
 - landing: sana
 - cards principales: actualizadas a segunda vuelta
 - senal en vivo: operable por reemplazo rapido de `LIVE_SIGNAL_URL`
-- cadencia final: horaria
+- cadencia final: congelada sobre el ultimo corte oficial
 
 ## Commits relevantes del cierre
 
