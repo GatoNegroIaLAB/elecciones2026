@@ -20,8 +20,8 @@ Fecha: 2026-05-31 (hora de Colombia)
 - Build y deploy en Vercel: OK.
 - Vercel production: `https://elecciones2026-beta.vercel.app`.
 - Root Directory correcto en Vercel: `telemedellin`.
-- Flujo activo: `Registraduria -> /api/ingest-registraduria y /api/cron-ingest-registraduria -> Supabase pr_* -> /api/results-live -> Web`.
-- Ultimo deploy validado al cierre del 2026-05-31: landing presidencial con card de ciudades, cron protegido, mapa por lider departamental, lock de corrida unica, reescritura atomica por boletin, rotulos de segunda vuelta y cadencia horaria post-cierre.
+- Flujo activo: `Registraduria -> /api/ingest-registraduria -> Supabase pr_* -> /api/results-live -> Web`.
+- Ultimo deploy validado al cierre del escrutinio: landing presidencial con card de ciudades, mapa por lider departamental, lock de corrida unica, reescritura atomica por boletin, rotulos de segunda vuelta y congelacion sobre el ultimo corte oficial.
 
 ## Servicios conectados
 
@@ -70,7 +70,7 @@ Fecha: 2026-05-31 (hora de Colombia)
 ## Landing actual
 
 - Fuente de datos frontend: `GET /api/results-live`.
-- Refresco automatico vigente al cierre de jornada: cada 1 hora.
+- Refresco automatico vigente al cierre final: deshabilitado automaticamente al detectar `100%` de mesas escrutadas.
 - Boton manual de actualizacion: eliminado para evitar recargas agresivas de usuarios.
 - Fotos de candidatos: se cargan desde URLs publicas optimizadas de Google Drive (`lh3.googleusercontent.com`) configuradas en `pages/index.js`; no se commitean binarios pesados al repo.
 - Voto en blanco: se muestra en la card de avance nacional, separado del ranking de candidatos.
@@ -140,9 +140,8 @@ Nota: las credenciales reales no deben quedar en GitHub ni en documentacion.
 
 ## Pendiente inmediato
 
-1. Si se mantiene el sitio publicado despues del cierre, revisar si conviene pasar de refresco horario a refresco manual.
-2. Si se quiere fijar un resultado final o texto editorial de cierre, hacerlo sobre la landing y no sobre la capa de ingesta.
-3. Dar acceso a la integracion de Notion sobre `TM_Elecciones` si se quiere actualizar la ficha desde Loki; al cierre, el conector devuelve `object_not_found`.
+1. Si se quiere fijar un texto editorial final de cierre, hacerlo sobre la landing y no sobre la capa de ingesta.
+2. Dar acceso a la integracion de Notion sobre `TM_Elecciones` si se quiere actualizar la ficha desde Loki; al cierre, el conector devuelve `object_not_found`.
 
 ## Simulacro 2026-05-27
 
@@ -163,6 +162,8 @@ Nota: las credenciales reales no deben quedar en GitHub ni en documentacion.
 - El avance `0000` puede contener datos de prueba/prejornada; no tratarlo como resultado definitivo.
 - El endpoint de simulacion nunca debe quedar activo durante operacion normal.
 - Cambios de variables en Vercel requieren redeploy para afectar el runtime activo.
-- Vercel Cron vigente al cierre ejecuta cada hora (`0 * * * *`).
-- El runtime del frontend ahora impone una cadencia minima efectiva de 1 hora incluso si `NEXT_PUBLIC_RESULTS_REFRESH_MS` sigue en un valor menor heredado.
+- Con el cierre completo del escrutinio, el proyecto quedo en modo de congelacion de resultados:
+  - `vercel.json` sin cron activo
+  - frontend sin auto-refresco cuando `porc_mesas_informadas >= 100`
+  - copy de estado reemplazado por `100% de mesas escrutadas`
 - Si aparece un error de ingesta durante jornada, revisar primero `pr_sync_state.last_error`, luego logs de Vercel y logs de Postgres en Supabase.
