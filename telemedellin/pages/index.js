@@ -366,7 +366,7 @@ export default function Home() {
   const refreshStatus = useMemo(() => {
     if (electionComplete) {
       return {
-        label: '100% de mesas escrutadas',
+        label: '100% mesas informadas',
         className: 'border-[#F1AA41]/50 bg-[#F1AA41]/15 text-[#F6C979]',
       }
     }
