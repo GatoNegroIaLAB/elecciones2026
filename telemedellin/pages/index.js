@@ -35,6 +35,11 @@ function formatPercent(value) {
   return Number.isFinite(n) ? `${n.toFixed(2)}%` : '0.00%'
 }
 
+function toNumericPercent(value) {
+  const n = Number(String(value ?? 0).replace(',', '.'))
+  return Number.isFinite(n) ? n : 0
+}
+
 function formatScheduleDate(value) {
   if (!value) return 'Pendiente de programar'
   return new Date(value).toLocaleString('es-CO', {
@@ -254,6 +259,7 @@ export default function Home() {
   const [lastUpdate, setLastUpdate] = useState(null)
   const [liveMuted, setLiveMuted] = useState(true)
   const [autoRefreshActive, setAutoRefreshActive] = useState(runtimeConfig.mode === 'live')
+  const electionComplete = toNumericPercent(national?.porc_mesas_informadas) >= 100
 
   const fetchData = useCallback(async () => {
     try {
@@ -289,12 +295,23 @@ export default function Home() {
     let timeoutId
 
     const startPolling = () => {
+      if (electionComplete) {
+        setAutoRefreshActive(false)
+        return
+      }
       setAutoRefreshActive(true)
       intervalId = setInterval(fetchData, runtimeConfig.refreshMs)
     }
 
     fetchData()
-    setAutoRefreshActive(runtimeConfig.mode === 'live')
+    setAutoRefreshActive(runtimeConfig.mode === 'live' && !electionComplete)
+
+    if (electionComplete) {
+      return () => {
+        if (intervalId) clearInterval(intervalId)
+        if (timeoutId) clearTimeout(timeoutId)
+      }
+    }
 
     if (runtimeConfig.mode === 'live') {
       startPolling()
@@ -314,7 +331,7 @@ export default function Home() {
       if (intervalId) clearInterval(intervalId)
       if (timeoutId) clearTimeout(timeoutId)
     }
-  }, [fetchData, runtimeConfig.autoRefreshStartAt, runtimeConfig.mode, runtimeConfig.refreshMs])
+  }, [electionComplete, fetchData, runtimeConfig.autoRefreshStartAt, runtimeConfig.mode, runtimeConfig.refreshMs])
 
   useEffect(() => {
     const sendHeight = () => {
@@ -347,9 +364,20 @@ export default function Home() {
     departments.filter(dep => dep.winner && departmentKey(dep.name) !== 'CONSULADOS')
   ), [departments])
   const refreshStatus = useMemo(() => {
-    if (autoRefreshActive) {
+    if (electionComplete) {
       return {
-        label: `Actualización automática cada ${Math.round(runtimeConfig.refreshMs / 1000)} segundos`,
+        label: '100% de mesas escrutadas',
+        className: 'border-[#F1AA41]/50 bg-[#F1AA41]/15 text-[#F6C979]',
+      }
+    }
+
+    if (autoRefreshActive) {
+      const refreshHours = runtimeConfig.refreshMs / (1000 * 60 * 60)
+      const label = refreshHours >= 1
+        ? `Actualización automática cada ${refreshHours.toFixed(refreshHours % 1 === 0 ? 0 : 1)} hora${refreshHours === 1 ? '' : 's'}`
+        : `Actualización automática cada ${Math.round(runtimeConfig.refreshMs / 1000)} segundos`
+      return {
+        label,
         className: 'border-[#00B6CD]/40 bg-[#00B6CD]/15 text-[#9DEAF4]',
       }
     }
@@ -365,7 +393,7 @@ export default function Home() {
       label: 'Actualización manual previa a jornada',
       className: 'border-[#BDB09B]/40 bg-white/5 text-[#E7DED0]',
     }
-  }, [autoRefreshActive, runtimeConfig.autoRefreshStartAt, runtimeConfig.refreshMs])
+  }, [autoRefreshActive, electionComplete, runtimeConfig.autoRefreshStartAt, runtimeConfig.refreshMs])
   const winnersByDepartment = useMemo(() => {
     const map = new Map()
     departmentWinners.forEach(dep => map.set(departmentKey(dep.name), dep))
