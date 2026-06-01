@@ -1,6 +1,6 @@
 # Elecciones 2026 - Handoff operativo
 
-Fecha: 2026-05-31
+Fecha: 2026-05-31 (hora de Colombia)
 
 ## Fuente del proyecto
 
@@ -21,7 +21,7 @@ Fecha: 2026-05-31
 - Vercel production: `https://elecciones2026-beta.vercel.app`.
 - Root Directory correcto en Vercel: `telemedellin`.
 - Flujo activo: `Registraduria -> /api/ingest-registraduria y /api/cron-ingest-registraduria -> Supabase pr_* -> /api/results-live -> Web`.
-- Ultimo deploy validado al cierre del 2026-05-31: landing presidencial con programacion de jornada, card de ciudades, cron protegido, mapa neutro previo a jornada, datos oficiales en cero, lock de corrida unica y reescritura atomica por boletin.
+- Ultimo deploy validado al cierre del 2026-05-31: landing presidencial con card de ciudades, cron protegido, mapa por lider departamental, lock de corrida unica, reescritura atomica por boletin, rotulos de segunda vuelta y cadencia horaria post-cierre.
 
 ## Servicios conectados
 
@@ -70,12 +70,14 @@ Fecha: 2026-05-31
 ## Landing actual
 
 - Fuente de datos frontend: `GET /api/results-live`.
-- Refresco automatico en jornada: cada 70 segundos, activado por fecha.
+- Refresco automatico vigente al cierre de jornada: cada 1 hora.
 - Boton manual de actualizacion: eliminado para evitar recargas agresivas de usuarios.
 - Fotos de candidatos: se cargan desde URLs publicas optimizadas de Google Drive (`lh3.googleusercontent.com`) configuradas en `pages/index.js`; no se commitean binarios pesados al repo.
 - Voto en blanco: se muestra en la card de avance nacional, separado del ranking de candidatos.
 - Badge superior: `Datos oficiales de la Registraduria Nacional`.
 - Senal en vivo: YouTube embebido carga con `autoplay=1`, `mute=1` y `enablejsapi=1`; el usuario puede activar/desactivar audio desde el boton superpuesto.
+- La referencia operativa de horario es siempre `America/Bogota` aunque el entorno del agente este en otra zona horaria.
+- El cambio de senal en vivo durante la jornada se hace editando la constante `LIVE_SIGNAL_URL` en `pages/index.js` y desplegando a production.
 - Titulo del mapa: `MAPA DE COLOMBIA POR MAYOR VOTACION DEPARTAMENTAL`.
 - Card adicional: `Votacion por ciudades`, con Medellin, Bogota, Cali y Barranquilla.
 - Comportamiento previo a jornada del mapa: todos los departamentos en naranja Telemedellin cuando no hay votos ni mesas reportadas.
@@ -98,8 +100,8 @@ Fecha: 2026-05-31
 
 ### Cards principales
 
-- Card 1: `Presidencia`.
-- Card 2: `Curul en Senado y Camara`.
+- Card 1: `Candidatos a segunda vuelta`.
+- Card 2: `Candidatos a segunda vuelta`.
 - Card 3: `Tercera mayor votacion`.
 - Sin iconos en los rotulos.
 - Porcentaje arriba y numero de votos debajo, para no pisar la foto.
@@ -128,13 +130,19 @@ Pendientes si se confirma que vuelven al alcance:
 
 Nota: las credenciales reales no deben quedar en GitHub ni en documentacion.
 
+## Estado confirmado durante jornada
+
+- Revision de las 16:05 COT: la cadena completa quedo viva en lectura real.
+- Se observo un `404` transitorio de Registraduria durante la publicacion inicial de `0001`, resuelto sin intervencion manual pocos minutos despues.
+- Revision de las 16:32 COT: API publica sana, Supabase sano, indice ya en `0005`.
+- Revision de las 17:05 COT: API publica sana, Supabase sano, Registraduria `200`, indice ya en `0012`.
+- El usuario reporto avance aproximado de `99.95%` al cierre de jornada; con eso se redujo la cadencia operativa a 1 hora.
+
 ## Pendiente inmediato
 
-1. Esperar el inicio real de jornada.
-2. Verificar el primer avance real despues de `2026-05-31T16:00:00-05:00`.
-3. Confirmar que el cron pase de `skipped=true` a ingesta efectiva.
-4. Revisar visualmente la landing con datos reales cuando empiecen los avances oficiales.
-5. Dar acceso a la integracion de Notion sobre `TM_Elecciones` si se quiere actualizar la ficha desde Loki; al cierre, el conector devuelve `object_not_found`.
+1. Si se mantiene el sitio publicado despues del cierre, revisar si conviene pasar de refresco horario a refresco manual.
+2. Si se quiere fijar un resultado final o texto editorial de cierre, hacerlo sobre la landing y no sobre la capa de ingesta.
+3. Dar acceso a la integracion de Notion sobre `TM_Elecciones` si se quiere actualizar la ficha desde Loki; al cierre, el conector devuelve `object_not_found`.
 
 ## Simulacro 2026-05-27
 
@@ -155,5 +163,6 @@ Nota: las credenciales reales no deben quedar en GitHub ni en documentacion.
 - El avance `0000` puede contener datos de prueba/prejornada; no tratarlo como resultado definitivo.
 - El endpoint de simulacion nunca debe quedar activo durante operacion normal.
 - Cambios de variables en Vercel requieren redeploy para afectar el runtime activo.
-- Vercel Cron ejecuta cada minuto, no con granularidad de 70/80 segundos.
+- Vercel Cron vigente al cierre ejecuta cada hora (`0 * * * *`).
+- El runtime del frontend ahora impone una cadencia minima efectiva de 1 hora incluso si `NEXT_PUBLIC_RESULTS_REFRESH_MS` sigue en un valor menor heredado.
 - Si aparece un error de ingesta durante jornada, revisar primero `pr_sync_state.last_error`, luego logs de Vercel y logs de Postgres en Supabase.
