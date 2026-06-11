@@ -1,6 +1,6 @@
 # Flujo de datos presidencial 2026
 
-Fecha de corte: 2026-05-31 (cierre de jornada, hora de Colombia)
+Fecha de corte: 2026-06-11 (transicion a segunda vuelta, hora de Colombia)
 
 ## Resumen
 
@@ -12,7 +12,7 @@ Registraduria -> Ingesta Vercel -> Supabase pr_* -> API Vercel -> Web
 
 La ingesta automatica ya queda versionada y validada en comportamiento previo a jornada. La ejecucion real sigue protegida por fecha y token privado.
 
-Estado actual: la conexion real con Registraduria quedo validada durante jornada, el simulador existe en codigo pero esta apagado en Vercel Production, la web lee el ultimo estado publicado en Supabase y, con el escrutinio completo, el proyecto quedo congelado sobre el ultimo corte oficial.
+Estado actual: primera vuelta cerrada, tablas `pr_*` reseteadas para segunda vuelta, basicos oficiales de segunda vuelta ya cargados en Supabase y cron aun desactivado hasta nueva programacion de jornada.
 
 ## Servicios
 
@@ -34,7 +34,7 @@ Estas variables viven en Vercel Production. No deben commitearse ni documentarse
 - `REGISTRADURIA_PASS`: password Basic Auth de Registraduria.
 - `REVALIDATE_TOKEN`: token privado usado para proteger la ingesta.
 - `CRON_SECRET`: token privado que Vercel envia en `Authorization` para los cron jobs.
-- `NEXT_PUBLIC_RESULTS_REFRESH_MS`: frecuencia visible del frontend durante jornada o post-cierre. Quedo versionada en `3600000`, pero el frontend deja de auto-refrescar cuando detecta `100%` de mesas escrutadas.
+- `NEXT_PUBLIC_RESULTS_REFRESH_MS`: frecuencia visible del frontend durante jornada o post-cierre.
 - `NEXT_PUBLIC_RESULTS_AUTO_REFRESH_START_AT`: fecha/hora ISO 8601 en la que el frontend debe empezar a refrescar solo.
 - `ENABLE_ELECTION_INGEST_CRON`: habilita o apaga la ingesta automatica en Vercel (`true` / `false`).
 - `ELECTION_INGEST_START_AT`: fecha/hora ISO 8601 desde la cual el cron puede ejecutar la ingesta real.
@@ -157,19 +157,26 @@ Las tablas presidenciales usan prefijo `pr_` para no mezclar datos con las tabla
 - `pr_latest_department_winners`: ganador por departamento.
 - `pr_live_status`: estado resumido para la web.
 
-## Datos cargados al 2026-05-26
+## Datos base de segunda vuelta al 2026-06-11
 
-Primera ingesta manual validada:
+Estado verificado tras el reset operativo:
 
-- `35` boletines.
-- `455` resultados.
-- `3` payloads crudos.
-- `13` candidatos nacionales.
-- `34` departamentos.
+- `2` partidos nacionales en catalogo.
+- `2` candidatos nacionales en catalogo.
+- `0` boletines cargados.
+- `0` resultados cargados.
+- `0` payloads crudos cargados.
+- `pr_sync_state.status = idle`.
 - Voto en blanco identificado en la fuente oficial como `Detalle_Partidos_Totales` codigo `00996`.
-- Estado `ok`.
 
-El avance inicial de prueba es `0000`; puede contener datos de prueba o estructura previa a jornada. En produccion debe tratarse como preconteo informativo, no vinculante.
+Codigos oficiales de segunda vuelta:
+
+- `00026` — Movimiento Politico Pacto Historico
+- `01003` — Defensores de la Patria
+- `00026/001` — IVÁN CEPEDA CASTRO
+- `01003/002` — ABELARDO DE LA ESPRIELLA
+
+Los archivos basicos de segunda vuelta entregados por Registraduria llegaron en `iso-8859-1`. El importador del repo se ajusto para soportar ese encoding y aceptar una carpeta externa mediante `REGISTRADURIA_BASICS_DIR`.
 
 La ingesta no debe asumir que `0000` sera siempre el ultimo indice. En cada ejecucion consulta el ultimo avance conocido en `pr_sync_state` y prueba los siguientes indices secuenciales hasta encontrar el primer `404`. El ultimo indice existente es el que se procesa.
 
@@ -196,11 +203,11 @@ La landing siempre hace una lectura inicial de `GET /api/results-live`.
 
 - antes de `NEXT_PUBLIC_RESULTS_AUTO_REFRESH_START_AT`, queda en modo previo a jornada;
 - desde esa fecha/hora, refresca cada `NEXT_PUBLIC_RESULTS_REFRESH_MS` milisegundos;
-- cuando `porc_mesas_informadas >= 100`, el frontend deja de auto-refrescar y reemplaza el copy por `100% de mesas escrutadas`.
+- cuando `porc_mesas_informadas >= 100`, el frontend deja de auto-refrescar y reemplaza el copy por el estado final correspondiente.
 
 Renderiza:
 
-- tres cards principales con foto para las mayores votaciones;
+- dos cards principales con foto para los dos candidatos en contienda;
 - lista nacional completa;
 - avance nacional, incluido voto en blanco;
 - votacion por ciudades para Medellin, Bogota, Cali y Barranquilla;
@@ -220,24 +227,24 @@ Comportamiento previo a jornada del mapa:
 Mobile:
 
 1. Avance nacional.
-2. Tres cards principales.
+2. Dos cards principales.
 3. Senal en vivo.
 4. Votacion por ciudades.
-5. Todos los candidatos.
+5. Candidatos en contienda.
 6. Mapa de Colombia.
 
 Escritorio:
 
-1. Tres cards principales.
+1. Dos cards principales.
 2. Senal en vivo.
-3. Dos columnas: todos los candidatos a la izquierda; avance nacional y votacion por ciudades a la derecha.
+3. Dos columnas: candidatos en contienda a la izquierda; avance nacional y votacion por ciudades a la derecha.
 4. Mapa de Colombia.
 
 ### Fotos y rotulos
 
 - Las fotos se referencian desde Google Drive usando URLs `https://lh3.googleusercontent.com/d/<fileId>=s640`.
 - No se guardan fotos de candidatos como binarios en GitHub.
-- Rotulos de las tres cards: `Candidatos a segunda vuelta`, `Candidatos a segunda vuelta`, `Tercera mayor votacion`.
+- Rotulos de las cards principales: `Candidatos a segunda vuelta`, `Candidatos a segunda vuelta`.
 - Las cards principales no usan iconos en el rotulo.
 - El iframe de YouTube usa `autoplay=1`, `mute=1`, `enablejsapi=1` y `playsinline=1`; el boton de audio envia `mute` / `unMute` con `postMessage` a la API del iframe.
 - La URL embebida de YouTube se centraliza en `LIVE_SIGNAL_URL` dentro de `pages/index.js`; durante la jornada se puede reemplazar manualmente y desplegar de inmediato.
@@ -264,14 +271,20 @@ La automatizacion ya puede quedar desplegada sin activarse antes de tiempo.
 
 Opciones recomendadas:
 
-- dejar la ingesta automatica deshabilitada y conservar el ultimo corte oficial mientras no se reabra este flujo para otra eleccion;
-- si se recicla este proyecto en el futuro, reactivar cron en `vercel.json` o usar un orquestador externo con `Authorization`.
+- Vercel Cron versionado en `vercel.json`, llamando `/api/cron-ingest-registraduria` cada hora al cierre de jornada.
+- Cron externo controlado desde n8n/EasyPanel con header `Authorization`.
+- Job temporal en servidor propio durante la jornada.
 
-Configuracion operativa de cierre:
+Recomendacion:
 
-- Inicio de jornada automatizada usado en esta eleccion: `2026-05-31T16:00:00-05:00`.
-- Ingesta por Vercel Cron: deshabilitada tras el 100% de mesas.
-- Refresco visible del frontend: deshabilitado automaticamente tras el 100% de mesas.
+- si el objetivo es simplicidad operativa, usar Vercel Cron + `ELECTION_INGEST_START_AT`;
+- si se necesita frecuencia exacta distinta de 60 segundos, pausas finas o alertas, usar n8n/EasyPanel.
+
+Configuracion operativa acordada al cierre del 2026-05-31:
+
+- Inicio de jornada automatizada: `2026-05-31T16:00:00-05:00` (domingo 31 de mayo de 2026, 4:00 p. m. hora de Colombia).
+- Ingesta por Vercel Cron: cada `1` hora.
+- Refresco visible del frontend: cada `1` hora.
 
 ## Documento de referencia operativa
 
