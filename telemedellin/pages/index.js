@@ -8,23 +8,22 @@ const LIVE_SIGNAL_URL = 'https://www.youtube.com/embed/4PjBPrpYhHo?autoplay=1&mu
 const DEFAULT_COLOR = '#64748b'
 const TELEMEDELLIN_ORANGE = '#F1AA41'
 const driveImage = id => `https://lh3.googleusercontent.com/d/${id}=s640`
-const TOP_CARD_LABELS = ['Candidatos a segunda vuelta', 'Candidatos a segunda vuelta', 'Tercera mayor votación']
+const TOP_CARD_LABELS = ['Candidatos a segunda vuelta', 'Candidatos a segunda vuelta']
 
 const CANDIDATES = {
   '00026': { name: 'Iván Cepeda Castro', party: 'Movimiento Político Pacto Histórico', color: '#6B2D8B', image: driveImage('1foKgArgt66Wn70f_t85-DiOc9JrCotAZ') },
-  '01004': { name: 'Claudia López', party: 'Con Claudia Imparables', color: '#2A7A4A', image: driveImage('1gZuV57Bh6JDXBkOmU_nzDy3EMewyoUVH') },
-  '01001': { name: 'Raúl Santiago Botero Jaramillo', party: 'Romper el Sistema', color: '#D4A017', image: driveImage('1SWlAQ3L7Dh_qSe9KCKfiV5mZGnmN2Mpf') },
   '01003': { name: 'Abelardo De La Espriella', party: 'Defensores de la Patria', color: '#1E4D8C', image: driveImage('1N5ReM7XbzwA77aGK8j7WACeD2U7QjUC9') },
-  '03001': { name: 'Óscar Mauricio Lizcano Arango', party: 'Coalición F.A.M.I.L.I.A', color: '#2C6FA8', image: driveImage('14jZhR5vt47kF3gKyAxWDbN7aJBduPJjz') },
-  '00020': { name: 'Miguel Uribe Londoño', party: 'Partido Demócrata Colombiano', color: '#C0252A', image: driveImage('1r4TV_NEH7-v9pFXK7_FSODz0HepzSGSP') },
-  '01002': { name: 'Sondra Macollins Garvin Pinto', party: 'Sondra Macollins, La Abogada de Hierro', color: '#B02020', image: driveImage('1a9roL84Sj6eYOV-KTrmbqjyJKgq5fUIi') },
-  '00022': { name: 'Roy Leonardo Barreras Montealegre', party: 'Partido Político La Fuerza', color: '#C06040', image: driveImage('1c6FvzrzAKCO1Xrp7GP-BYnPLsgC-hK0r') },
-  '01006': { name: 'Carlos Eduardo Caicedo Omar', party: 'Caicedo', color: '#1E6A98', image: driveImage('1RDI6NQTVVC9TLzJBHrqEOurUjIMbg3ul') },
-  '00021': { name: 'Gustavo Matamoros Camacho', party: 'Partido Ecologista Colombiano', color: '#5A7A3A', image: driveImage('11G_QO1Fq7qzGQXRHT8-TV393mAKKhO8Y') },
-  '00009': { name: 'Paloma Valencia Laserna', party: 'Partido Centro Democrático', color: '#1A3A6B', image: driveImage('1YB-PV6OWMQpoSfM9AiCiobeP1zFF0jst') },
-  '00015': { name: 'Sergio Fajardo Valderrama', party: 'Partido Político Dignidad & Compromiso', color: '#4A9A5A', image: driveImage('1ZohyUqIdwTlcqhPMu6V_3JRPZgL4lIOa') },
-  '01005': { name: 'Luis Gilberto Murillo Urrutia', party: 'La Oportunidad Es Colombia', color: '#3A8A6A', image: driveImage('1MCMehk-E-HytarkHANH1AYRyylTClmkg') },
 }
+const FALLBACK_CANDIDATES = ['00026', '01003'].map(code => ({
+  code,
+  candidateCode: code === '00026' ? '001' : '002',
+  name: CANDIDATES[code].name,
+  party: CANDIDATES[code].party,
+  color: CANDIDATES[code].color,
+  image: CANDIDATES[code].image,
+  votes: 0,
+  percent: 0,
+}))
 
 function formatNumber(value) {
   return Number(value || 0).toLocaleString('es-CO')
@@ -358,8 +357,9 @@ export default function Home() {
     setLiveMuted(!liveMuted)
   }, [liveMuted])
 
-  const topThree = candidates.slice(0, 3)
-  const leaderVotes = candidates[0]?.votes || 0
+  const visibleCandidates = candidates.length > 0 ? candidates : FALLBACK_CANDIDATES
+  const topThree = visibleCandidates.slice(0, 2)
+  const leaderVotes = visibleCandidates[0]?.votes || 0
   const departmentWinners = useMemo(() => (
     departments.filter(dep => dep.winner && departmentKey(dep.name) !== 'CONSULADOS')
   ), [departments])
@@ -407,7 +407,7 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>Telemedellín · Presidenciales 2026 en Vivo</title>
+        <title>Telemedellín · Segunda vuelta presidencial 2026</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=IBM+Plex+Sans:wght@400;600;800&display=swap" rel="stylesheet" />
       </Head>
@@ -417,7 +417,7 @@ export default function Home() {
           <div className="mx-auto max-w-7xl">
             <div>
               <h1 className="text-base font-bold leading-none">
-                Elecciones Presidenciales 2026 · <span className="text-[#00B6CD]">Resultados en vivo</span>
+                Segunda vuelta presidencial 2026 · <span className="text-[#00B6CD]">Resultados en vivo</span>
               </h1>
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <span className="flex items-center gap-1 rounded border border-[#F1AA41]/40 bg-[#F1AA41]/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#F1AA41]">
@@ -449,7 +449,7 @@ export default function Home() {
             <NationalProgressCard lastUpdate={lastUpdate} national={national} />
           </div>
 
-          <section className="order-2 grid grid-cols-1 gap-4 md:grid-cols-3 lg:col-span-12 lg:order-1">
+          <section className="order-2 grid grid-cols-1 gap-4 md:grid-cols-2 lg:col-span-12 lg:order-1">
             {topThree.map((candidate, idx) => (
               <Card key={candidate.code} className="overflow-hidden">
                 <div className="h-1.5" style={{ backgroundColor: candidate.color }} />
@@ -523,14 +523,14 @@ export default function Home() {
             <div className="mb-5 flex items-center gap-3">
               <Users size={18} className="text-[#F1AA41]" />
               <div>
-                <h3 className="text-sm font-black uppercase tracking-widest text-white">Todos los candidatos</h3>
+                <h3 className="text-sm font-black uppercase tracking-widest text-white">Candidatos en contienda</h3>
                 <p className="text-[10px] uppercase tracking-widest text-[#BDB09B]">Votación nacional y porcentaje</p>
               </div>
             </div>
             <div className="space-y-4 sm:space-y-5">
               {loading && candidates.length === 0 ? (
                 <p className="py-8 text-center text-sm text-[#BDB09B]">Cargando resultados...</p>
-              ) : candidates.map((candidate, idx) => (
+              ) : visibleCandidates.map((candidate, idx) => (
                 <CandidateRow key={candidate.code} candidate={candidate} leaderVotes={leaderVotes} rank={idx + 1} />
               ))}
             </div>
