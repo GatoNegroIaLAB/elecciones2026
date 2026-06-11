@@ -6,6 +6,7 @@ App Next.js para visualización de resultados electorales en tiempo real, conect
 
 - Estado general y handoff operativo: [`docs/PROJECT_HANDOFF.md`](docs/PROJECT_HANDOFF.md)
 - Flujo técnico presidencial: [`docs/PRESIDENTIAL_DATA_FLOW.md`](docs/PRESIDENTIAL_DATA_FLOW.md)
+- Estado detallado de segunda vuelta al 2026-06-11: [`docs/SECOND_ROUND_STATUS_2026-06-11.md`](docs/SECOND_ROUND_STATUS_2026-06-11.md)
 - Estado de alistamiento para jornada al 2026-05-29: [`docs/ELECTION_READINESS_2026-05-29.md`](docs/ELECTION_READINESS_2026-05-29.md)
 - Bitácora de operación del día de elecciones 2026-05-31: [`docs/ELECTION_DAY_OPERATIONS_2026-05-31.md`](docs/ELECTION_DAY_OPERATIONS_2026-05-31.md)
 
@@ -19,6 +20,14 @@ App Next.js para visualización de resultados electorales en tiempo real, conect
 - Supabase queda cargado con los básicos oficiales de segunda vuelta: **2 partidos** y **2 candidatos**.
 - El cron de Vercel sigue retirado por ahora; la próxima reactivación se debe hacer explícitamente cuando se defina la nueva jornada.
 - La landing quedó simplificada para segunda vuelta: dos cards principales, copy dedicado y catálogos alineados al nuevo tarjetón.
+- La fecha operativa ya programada para segunda vuelta es **domingo 21 de junio de 2026, 4:00 p. m. hora Colombia**.
+- Las variables reales de Vercel ya quedaron alineadas con ese arranque:
+  - `NEXT_PUBLIC_RESULTS_AUTO_REFRESH_START_AT=2026-06-21T16:00:00-05:00`
+  - `ELECTION_INGEST_START_AT=2026-06-21T16:00:00-05:00`
+- El layout desktop vigente se reorganizó para dos candidatos:
+  - fila superior con `Candidatos en segunda vuelta` y `Avance nacional`
+  - fila inferior con `Votación por ciudades` a ancho completo
+- El color oficial de `Defensores de la Patria / Abelardo De La Espriella` quedó corregido a `#DA7100` tanto en frontend como en Supabase.
 
 ## Setup
 
@@ -44,6 +53,8 @@ Copia `.env.local.example` a `.env.local` y completa:
 Valor operativo vigente al cierre de jornada:
 
 - `NEXT_PUBLIC_RESULTS_REFRESH_MS=3600000`
+- `NEXT_PUBLIC_RESULTS_AUTO_REFRESH_START_AT=2026-06-21T16:00:00-05:00`
+- `ELECTION_INGEST_START_AT=2026-06-21T16:00:00-05:00`
 
 ### Básicos de Registraduría
 
