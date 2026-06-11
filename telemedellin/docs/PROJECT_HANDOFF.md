@@ -1,6 +1,6 @@
 # Elecciones 2026 - Handoff operativo
 
-Fecha: 2026-05-31 (hora de Colombia)
+Fecha: 2026-06-11 (hora de Colombia)
 
 ## Fuente del proyecto
 
@@ -21,7 +21,7 @@ Fecha: 2026-05-31 (hora de Colombia)
 - Vercel production: `https://elecciones2026-beta.vercel.app`.
 - Root Directory correcto en Vercel: `telemedellin`.
 - Flujo activo: `Registraduria -> /api/ingest-registraduria -> Supabase pr_* -> /api/results-live -> Web`.
-- Ultimo deploy validado al cierre del escrutinio: landing presidencial con card de ciudades, mapa por lider departamental, lock de corrida unica, reescritura atomica por boletin, rotulos de segunda vuelta y congelacion sobre el ultimo corte oficial.
+- Estado vigente tras el corte de primera vuelta: sistema reconvertido para segunda vuelta, con reset de `pr_*`, dos candidatos oficiales cargados y frontend simplificado a dos cards principales.
 
 ## Servicios conectados
 
@@ -43,6 +43,27 @@ Fecha: 2026-05-31 (hora de Colombia)
   - `/api/proxy-boletin` responde JSON valido para esa URL.
 - Primera ingesta presidencial manual validada.
   - El voto en blanco viene en `Detalle_Partidos_Totales` como codigo `00996`, no como candidato normal.
+
+## Actualizacion 2026-06-11 - Segunda vuelta
+
+- No se conserva informacion operativa de primera vuelta en `pr_*`.
+- Se aplico un reset controlado sobre:
+  - `pr_results`
+  - `pr_boletins`
+  - `pr_raw_payloads`
+  - `pr_catalog_*`
+  - `pr_sync_state`
+- Se cargaron los basicos oficiales de segunda vuelta:
+  - Partidos: `00026` Pacto Historico, `01003` Defensores de la Patria
+  - Candidatos: `IVÁN CEPEDA CASTRO`, `ABELARDO DE LA ESPRIELLA`
+- Conteo actual verificado en Supabase tras el reset:
+  - `pr_catalog_parties = 2`
+  - `pr_catalog_candidates = 2`
+  - `pr_boletins = 0`
+  - `pr_results = 0`
+  - `pr_sync_state.status = idle`
+- Los archivos basicos nuevos llegaron en `iso-8859-1`; el importador del repo ya fue ajustado para soportar ese encoding.
+- `DIVIPOL` no se versiona en `v03` dentro del repo porque no hace parte del runtime minimo, pero el importador ya puede leerlo desde una carpeta externa si se necesita cargarlo.
 
 ## Documentacion tecnica
 
@@ -85,24 +106,23 @@ Fecha: 2026-05-31 (hora de Colombia)
 ### Orden mobile
 
 1. Avance nacional.
-2. Tres cards principales.
+2. Dos cards principales.
 3. Senal en vivo.
 4. Votacion por ciudades.
-5. Todos los candidatos.
+5. Candidatos en contienda.
 6. Mapa de Colombia.
 
 ### Orden escritorio
 
-1. Tres cards principales.
+1. Dos cards principales.
 2. Senal en vivo.
-3. Dos columnas: `Todos los candidatos` a la izquierda; `Avance nacional` y `Votacion por ciudades` a la derecha.
+3. Dos columnas: `Candidatos en contienda` a la izquierda; `Avance nacional` y `Votacion por ciudades` a la derecha.
 4. Mapa de Colombia.
 
 ### Cards principales
 
 - Card 1: `Candidatos a segunda vuelta`.
 - Card 2: `Candidatos a segunda vuelta`.
-- Card 3: `Tercera mayor votacion`.
 - Sin iconos en los rotulos.
 - Porcentaje arriba y numero de votos debajo, para no pisar la foto.
 
@@ -162,8 +182,9 @@ Nota: las credenciales reales no deben quedar en GitHub ni en documentacion.
 - El avance `0000` puede contener datos de prueba/prejornada; no tratarlo como resultado definitivo.
 - El endpoint de simulacion nunca debe quedar activo durante operacion normal.
 - Cambios de variables en Vercel requieren redeploy para afectar el runtime activo.
-- Con el cierre completo del escrutinio, el proyecto quedo en modo de congelacion de resultados:
-  - `vercel.json` sin cron activo
-  - frontend sin auto-refresco cuando `porc_mesas_informadas >= 100`
-  - copy de estado reemplazado por `100% de mesas escrutadas`
+- Tras el cierre de primera vuelta, el proyecto quedo en transicion controlada hacia segunda vuelta:
+  - `vercel.json` sigue sin cron activo
+  - Supabase ya no conserva los resultados anteriores en `pr_*`
+  - el frontend ya no muestra una tercera card
+  - el nuevo encendido de jornada debe programarse de forma explicita cuando se defina la operacion de segunda vuelta
 - Si aparece un error de ingesta durante jornada, revisar primero `pr_sync_state.last_error`, luego logs de Vercel y logs de Postgres en Supabase.
