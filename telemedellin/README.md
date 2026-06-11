@@ -14,9 +14,11 @@ App Next.js para visualización de resultados electorales en tiempo real, conect
 - La referencia horaria operativa del proyecto es siempre **Colombia / America/Bogota (UTC-05:00)**.
 - El flujo productivo vigente es: `Registraduria -> Vercel ingest -> Supabase pr_* -> /api/results-live -> landing`.
 - La señal en vivo de YouTube se cambia manualmente editando `LIVE_SIGNAL_URL` en `pages/index.js` y desplegando a production.
-- Con el escrutinio ya cerrado al **100% de mesas**, se retiro el cron de Vercel y el frontend deja de auto-refrescar al detectar el cierre completo.
-- Los ultimos datos oficiales recibidos quedan congelados como estado final publicado.
-- Los dos primeros rotulos de las cards principales quedaron unificados como: `Candidatos a segunda vuelta`.
+- El 2026-06-11 se hizo el corte de primera vuelta para reconvertir el sistema a **segunda vuelta presidencial**.
+- Se eliminaron de `pr_*` los boletines, resultados y catálogos de primera vuelta.
+- Supabase queda cargado con los básicos oficiales de segunda vuelta: **2 partidos** y **2 candidatos**.
+- El cron de Vercel sigue retirado por ahora; la próxima reactivación se debe hacer explícitamente cuando se defina la nueva jornada.
+- La landing quedó simplificada para segunda vuelta: dos cards principales, copy dedicado y catálogos alineados al nuevo tarjetón.
 
 ## Setup
 
@@ -42,6 +44,17 @@ Copia `.env.local.example` a `.env.local` y completa:
 Valor operativo vigente al cierre de jornada:
 
 - `NEXT_PUBLIC_RESULTS_REFRESH_MS=3600000`
+
+### Básicos de Registraduría
+
+- El importador `scripts/import-registraduria-basics.mjs` ahora soporta:
+  - seleccionar carpeta con `REGISTRADURIA_BASICS_DIR`
+  - seleccionar encoding con `REGISTRADURIA_BASICS_ENCODING`
+  - omitir `DIVIPOL` si no existe en la carpeta de carga
+- Los básicos versionados en el repo viven en:
+  - `data/registraduria-basics/v02` — primera vuelta
+  - `data/registraduria-basics/v03` — segunda vuelta
+- Los archivos oficiales de segunda vuelta entregados por Registraduría llegaron en `iso-8859-1`, no en `utf-8`.
 
 ### 3. Desarrollo local
 ```bash
