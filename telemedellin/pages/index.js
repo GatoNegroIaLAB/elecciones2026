@@ -153,7 +153,7 @@ const CityVotingCard = ({ cities, loading }) => (
       <h3 className="text-sm font-black uppercase tracking-widest text-white">Votación por ciudades</h3>
       <p className="mt-1 text-[10px] uppercase tracking-widest text-[#BDB09B]">Medellín, Bogotá, Cali y Barranquilla</p>
     </div>
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
       {loading && cities.length === 0 ? (
         <p className="py-6 text-sm text-[#BDB09B]">Cargando ciudades...</p>
       ) : cities.map(city => (
@@ -536,12 +536,15 @@ export default function Home() {
             </div>
           </Card>
 
-          <section className="hidden lg:col-span-5 lg:order-4 lg:flex lg:flex-col lg:gap-5">
+          <section className="hidden lg:col-span-5 lg:order-4 lg:block">
             <NationalProgressCard lastUpdate={lastUpdate} national={national} />
+          </section>
+
+          <section className="hidden lg:col-span-12 lg:order-5 lg:block">
             <CityVotingCard cities={cities} loading={loading} />
           </section>
 
-          <section className="order-6 lg:col-span-12 lg:order-5">
+          <section className="order-6 lg:col-span-12 lg:order-6">
             <Card className="p-5">
               <div className="mb-5">
                 <h3 className="text-sm font-black uppercase tracking-widest text-white">Mapa de Colombia por mayor votación departamental</h3>
