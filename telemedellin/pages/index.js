@@ -384,7 +384,7 @@ export default function Home() {
 
     if (runtimeConfig.autoRefreshStartAt) {
       return {
-        label: `Actualización automática desde ${formatScheduleDate(runtimeConfig.autoRefreshStartAt)}`,
+        label: `Actualización programada para ${formatScheduleDate(runtimeConfig.autoRefreshStartAt)}`,
         className: 'border-[#F1AA41]/50 bg-[#F1AA41]/15 text-[#F6C979]',
       }
     }
