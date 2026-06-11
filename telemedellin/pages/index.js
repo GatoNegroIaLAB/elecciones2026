@@ -523,7 +523,7 @@ export default function Home() {
             <div className="mb-5 flex items-center gap-3">
               <Users size={18} className="text-[#F1AA41]" />
               <div>
-                <h3 className="text-sm font-black uppercase tracking-widest text-white">Candidatos en contienda</h3>
+                <h3 className="text-sm font-black uppercase tracking-widest text-white">Candidatos en segunda vuelta</h3>
                 <p className="text-[10px] uppercase tracking-widest text-[#BDB09B]">Votación nacional y porcentaje</p>
               </div>
             </div>
