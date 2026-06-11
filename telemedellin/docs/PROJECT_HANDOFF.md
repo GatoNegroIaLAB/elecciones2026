@@ -22,6 +22,7 @@ Fecha: 2026-06-11 (hora de Colombia)
 - Root Directory correcto en Vercel: `telemedellin`.
 - Flujo activo: `Registraduria -> /api/ingest-registraduria -> Supabase pr_* -> /api/results-live -> Web`.
 - Estado vigente tras el corte de primera vuelta: sistema reconvertido para segunda vuelta, con reset de `pr_*`, dos candidatos oficiales cargados y frontend simplificado a dos cards principales.
+- Referencia horaria operativa: siempre `America/Bogota`.
 
 ## Servicios conectados
 
@@ -64,6 +65,12 @@ Fecha: 2026-06-11 (hora de Colombia)
   - `pr_sync_state.status = idle`
 - Los archivos basicos nuevos llegaron en `iso-8859-1`; el importador del repo ya fue ajustado para soportar ese encoding.
 - `DIVIPOL` no se versiona en `v03` dentro del repo porque no hace parte del runtime minimo, pero el importador ya puede leerlo desde una carpeta externa si se necesita cargarlo.
+- La fecha de arranque configurada para segunda vuelta quedo alineada a:
+  - `2026-06-21T16:00:00-05:00` para `NEXT_PUBLIC_RESULTS_AUTO_REFRESH_START_AT`
+  - `2026-06-21T16:00:00-05:00` para `ELECTION_INGEST_START_AT`
+- `vercel.json` sigue sin cron activo; la reactivacion se debe hacer explicitamente antes de jornada.
+- El color oficial de `Defensores de la Patria / Abelardo De La Espriella` quedo corregido a `#DA7100` en frontend, importador y Supabase.
+- La documentacion detallada de esta fase vive tambien en `docs/SECOND_ROUND_STATUS_2026-06-11.md`.
 
 ## Documentacion tecnica
 
@@ -91,7 +98,8 @@ Fecha: 2026-06-11 (hora de Colombia)
 ## Landing actual
 
 - Fuente de datos frontend: `GET /api/results-live`.
-- Refresco automatico vigente al cierre final: deshabilitado automaticamente al detectar `100%` de mesas escrutadas.
+- Antes de jornada, el badge muestra la programacion de actualizacion para el domingo 21 de junio de 2026 a las 4:00 p. m. hora Colombia.
+- El refresco automatico visible no debe arrancar antes de `NEXT_PUBLIC_RESULTS_AUTO_REFRESH_START_AT`.
 - Boton manual de actualizacion: eliminado para evitar recargas agresivas de usuarios.
 - Fotos de candidatos: se cargan desde URLs publicas optimizadas de Google Drive (`lh3.googleusercontent.com`) configuradas en `pages/index.js`; no se commitean binarios pesados al repo.
 - Voto en blanco: se muestra en la card de avance nacional, separado del ranking de candidatos.
@@ -102,6 +110,7 @@ Fecha: 2026-06-11 (hora de Colombia)
 - Titulo del mapa: `MAPA DE COLOMBIA POR MAYOR VOTACION DEPARTAMENTAL`.
 - Card adicional: `Votacion por ciudades`, con Medellin, Bogota, Cali y Barranquilla.
 - Comportamiento previo a jornada del mapa: todos los departamentos en naranja Telemedellin cuando no hay votos ni mesas reportadas.
+- Copy vigente de bloque lateral/listado: `Candidatos en segunda vuelta`.
 
 ### Orden mobile
 
@@ -109,15 +118,16 @@ Fecha: 2026-06-11 (hora de Colombia)
 2. Dos cards principales.
 3. Senal en vivo.
 4. Votacion por ciudades.
-5. Candidatos en contienda.
+5. Candidatos en segunda vuelta.
 6. Mapa de Colombia.
 
 ### Orden escritorio
 
 1. Dos cards principales.
 2. Senal en vivo.
-3. Dos columnas: `Candidatos en contienda` a la izquierda; `Avance nacional` y `Votacion por ciudades` a la derecha.
-4. Mapa de Colombia.
+3. Dos columnas en la fila superior: `Candidatos en segunda vuelta` a la izquierda y `Avance nacional` a la derecha.
+4. Una fila completa debajo con `Votacion por ciudades`.
+5. Mapa de Colombia.
 
 ### Cards principales
 
@@ -160,8 +170,9 @@ Nota: las credenciales reales no deben quedar en GitHub ni en documentacion.
 
 ## Pendiente inmediato
 
-1. Si se quiere fijar un texto editorial final de cierre, hacerlo sobre la landing y no sobre la capa de ingesta.
-2. Dar acceso a la integracion de Notion sobre `TM_Elecciones` si se quiere actualizar la ficha desde Loki; al cierre, el conector devuelve `object_not_found`.
+1. Definir si el encendido automatico de segunda vuelta se reactivara con cron de Vercel o con otro orquestador.
+2. Hacer una verificacion corta de fuente real de Registraduria cuando se acerque la jornada de segunda vuelta.
+3. Dar acceso a la integracion de Notion sobre `TM_Elecciones` si se quiere actualizar la ficha desde Loki; al cierre, el conector devuelve `object_not_found`.
 
 ## Simulacro 2026-05-27
 
@@ -186,5 +197,6 @@ Nota: las credenciales reales no deben quedar en GitHub ni en documentacion.
   - `vercel.json` sigue sin cron activo
   - Supabase ya no conserva los resultados anteriores en `pr_*`
   - el frontend ya no muestra una tercera card
+  - el layout desktop ya no apila `Votacion por ciudades` debajo de `Avance nacional`; ahora vive en una fila propia
   - el nuevo encendido de jornada debe programarse de forma explicita cuando se defina la operacion de segunda vuelta
 - Si aparece un error de ingesta durante jornada, revisar primero `pr_sync_state.last_error`, luego logs de Vercel y logs de Postgres en Supabase.
