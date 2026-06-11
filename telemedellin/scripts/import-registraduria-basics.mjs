@@ -5,7 +5,21 @@ import { createClient } from '@supabase/supabase-js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootDir = path.resolve(__dirname, '..')
-const basicsDir = path.join(rootDir, 'data', 'registraduria-basics', 'v02')
+const PARTY_COLORS = {
+  '00009': '#1A3A6B',
+  '00015': '#4A9A5A',
+  '00020': '#C0252A',
+  '00021': '#5A7A3A',
+  '00022': '#C06040',
+  '00026': '#6B2D8B',
+  '01001': '#D4A017',
+  '01002': '#B02020',
+  '01003': '#1E4D8C',
+  '01004': '#2A7A4A',
+  '01005': '#3A8A6A',
+  '01006': '#1E6A98',
+  '03001': '#2C6FA8',
+}
 
 function readEnvFile(filePath) {
   if (!fs.existsSync(filePath)) return {}
@@ -40,40 +54,79 @@ function requireEnv(key) {
   return value
 }
 
-function readLines(filename) {
-  return fs.readFileSync(path.join(basicsDir, filename), 'utf8')
+function resolveBundledBasicsDir() {
+  const baseDir = path.join(rootDir, 'data', 'registraduria-basics')
+  if (!fs.existsSync(baseDir)) {
+    throw new Error(`Missing bundled basics directory: ${baseDir}`)
+  }
+
+  const versions = fs.readdirSync(baseDir, { withFileTypes: true })
+    .filter(entry => entry.isDirectory() && /^v\d+$/i.test(entry.name))
+    .map(entry => ({
+      name: entry.name,
+      version: Number.parseInt(entry.name.slice(1), 10),
+    }))
+    .sort((a, b) => b.version - a.version)
+
+  if (versions.length === 0) {
+    throw new Error(`No bundled basics versions found in ${baseDir}`)
+  }
+
+  return path.join(baseDir, versions[0].name)
+}
+
+function resolveBasicsDir() {
+  if (localEnv.REGISTRADURIA_BASICS_DIR) {
+    return path.resolve(rootDir, localEnv.REGISTRADURIA_BASICS_DIR)
+  }
+  return resolveBundledBasicsDir()
+}
+
+function resolveEncoding() {
+  return localEnv.REGISTRADURIA_BASICS_ENCODING || 'utf8'
+}
+
+function readLines(basicsDir, filename, { optional = false } = {}) {
+  const filePath = path.join(basicsDir, filename)
+  if (!fs.existsSync(filePath)) {
+    if (optional) return []
+    throw new Error(`Missing basics file: ${filePath}`)
+  }
+
+  return fs.readFileSync(filePath, resolveEncoding())
     .split(/\r?\n/)
     .map(line => line.trimEnd())
     .filter(Boolean)
 }
 
-function parseCorporations() {
-  return readLines('CORPORACION.txt').map(line => ({
+function parseCorporations(basicsDir) {
+  return readLines(basicsDir, 'CORPORACION.txt').map(line => ({
     codigo: line.slice(0, 3),
     nombre: line.slice(3).trim(),
     sigla: 'PR',
   }))
 }
 
-function parseCircunscriptions() {
-  return readLines('CIRCUNSCRIPCION.txt').map(line => ({
+function parseCircunscriptions(basicsDir) {
+  return readLines(basicsDir, 'CIRCUNSCRIPCION.txt').map(line => ({
     codigo: line.slice(0, 1),
     nombre: line.slice(1).trim(),
   }))
 }
 
-function parseParties() {
-  return readLines('PARTIDOS.txt').map(line => ({
+function parseParties(basicsDir) {
+  return readLines(basicsDir, 'PARTIDOS.txt').map(line => ({
     codigo: line.slice(0, 5),
     nombre: line.slice(5, -2).trim(),
     es_nacional: line.slice(-1) === 'N',
+    color_hex: PARTY_COLORS[line.slice(0, 5)] || null,
     source_raw: line,
     updated_at: new Date().toISOString(),
   }))
 }
 
-function parseCandidates() {
-  return readLines('CANDIDATOS.txt').map(line => {
+function parseCandidates(basicsDir) {
+  return readLines(basicsDir, 'CANDIDATOS.txt').map(line => {
     const details = line.slice(20).trim()
     const match = details.match(/^(.*)\s+(\d+)\s+([MF])(\d+)$/)
     if (!match) throw new Error(`Could not parse candidate line: ${line}`)
@@ -118,8 +171,8 @@ function parseDivipolTail(line) {
   }
 }
 
-function parseDivipol() {
-  return readLines('DIVIPOL.txt').map(line => {
+function parseDivipol(basicsDir) {
+  return readLines(basicsDir, 'DIVIPOL.txt', { optional: true }).map(line => {
     const parsed = parseDivipolTail(line)
 
     return {
@@ -157,17 +210,18 @@ async function upsertInChunks(supabase, table, rows, options = {}) {
 }
 
 async function main() {
+  const basicsDir = resolveBasicsDir()
   const supabase = createClient(
     requireEnv('NEXT_PUBLIC_SUPABASE_URL'),
     requireEnv('SUPABASE_SERVICE_KEY'),
     { auth: { persistSession: false } },
   )
 
-  const corporations = parseCorporations()
-  const circunscriptions = parseCircunscriptions()
-  const parties = parseParties()
-  const candidates = parseCandidates()
-  const divipol = parseDivipol()
+  const corporations = parseCorporations(basicsDir)
+  const circunscriptions = parseCircunscriptions(basicsDir)
+  const parties = parseParties(basicsDir)
+  const candidates = parseCandidates(basicsDir)
+  const divipol = parseDivipol(basicsDir)
 
   await upsertInChunks(supabase, 'pr_catalog_corporations', corporations, { chunkSize: 50 })
   await upsertInChunks(supabase, 'pr_catalog_circunscriptions', circunscriptions, { chunkSize: 50 })
@@ -176,13 +230,16 @@ async function main() {
     chunkSize: 50,
     upsertOptions: { onConflict: 'codigo_corporacion,codigo_circunscripcion,codigo_partido,codigo_candidato' },
   })
-  await upsertInChunks(supabase, 'pr_catalog_divipol', divipol, {
-    chunkSize: 500,
-    upsertOptions: { onConflict: 'codigo_departamento,codigo_municipio,codigo_zona,codigo_puesto' },
-  })
+  if (divipol.length > 0) {
+    await upsertInChunks(supabase, 'pr_catalog_divipol', divipol, {
+      chunkSize: 500,
+      upsertOptions: { onConflict: 'codigo_departamento,codigo_municipio,codigo_zona,codigo_puesto' },
+    })
+  }
 
   console.log(JSON.stringify({
-    version: 'v02',
+    basics_dir: basicsDir,
+    encoding: resolveEncoding(),
     corporations: corporations.length,
     circunscriptions: circunscriptions.length,
     parties: parties.length,
