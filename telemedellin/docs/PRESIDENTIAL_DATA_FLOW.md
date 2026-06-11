@@ -12,7 +12,7 @@ Registraduria -> Ingesta Vercel -> Supabase pr_* -> API Vercel -> Web
 
 La ingesta automatica ya queda versionada y validada en comportamiento previo a jornada. La ejecucion real sigue protegida por fecha y token privado.
 
-Estado actual: primera vuelta cerrada, tablas `pr_*` reseteadas para segunda vuelta, basicos oficiales de segunda vuelta ya cargados en Supabase y cron aun desactivado hasta nueva programacion de jornada.
+Estado actual: primera vuelta cerrada, tablas `pr_*` reseteadas para segunda vuelta, basicos oficiales de segunda vuelta ya cargados en Supabase, variables reales de jornada alineadas al 2026-06-21 16:00 COT y cron aun desactivado hasta reactivacion explicita.
 
 ## Servicios
 
@@ -38,6 +38,11 @@ Estas variables viven en Vercel Production. No deben commitearse ni documentarse
 - `NEXT_PUBLIC_RESULTS_AUTO_REFRESH_START_AT`: fecha/hora ISO 8601 en la que el frontend debe empezar a refrescar solo.
 - `ENABLE_ELECTION_INGEST_CRON`: habilita o apaga la ingesta automatica en Vercel (`true` / `false`).
 - `ELECTION_INGEST_START_AT`: fecha/hora ISO 8601 desde la cual el cron puede ejecutar la ingesta real.
+
+Valores operativos ya alineados para segunda vuelta:
+
+- `NEXT_PUBLIC_RESULTS_AUTO_REFRESH_START_AT=2026-06-21T16:00:00-05:00`
+- `ELECTION_INGEST_START_AT=2026-06-21T16:00:00-05:00`
 
 ## Endpoints propios
 
@@ -230,21 +235,24 @@ Mobile:
 2. Dos cards principales.
 3. Senal en vivo.
 4. Votacion por ciudades.
-5. Candidatos en contienda.
+5. Candidatos en segunda vuelta.
 6. Mapa de Colombia.
 
 Escritorio:
 
 1. Dos cards principales.
 2. Senal en vivo.
-3. Dos columnas: candidatos en contienda a la izquierda; avance nacional y votacion por ciudades a la derecha.
-4. Mapa de Colombia.
+3. Fila superior en dos columnas: `Candidatos en segunda vuelta` a la izquierda y `Avance nacional` a la derecha.
+4. Fila completa debajo con `Votacion por ciudades`.
+5. Mapa de Colombia.
 
 ### Fotos y rotulos
 
 - Las fotos se referencian desde Google Drive usando URLs `https://lh3.googleusercontent.com/d/<fileId>=s640`.
 - No se guardan fotos de candidatos como binarios en GitHub.
 - Rotulos de las cards principales: `Candidatos a segunda vuelta`, `Candidatos a segunda vuelta`.
+- Rotulo del listado lateral y bloque de candidatos: `Candidatos en segunda vuelta`.
+- Color operativo de `Defensores de la Patria / Abelardo De La Espriella`: `#DA7100`.
 - Las cards principales no usan iconos en el rotulo.
 - El iframe de YouTube usa `autoplay=1`, `mute=1`, `enablejsapi=1` y `playsinline=1`; el boton de audio envia `mute` / `unMute` con `postMessage` a la API del iframe.
 - La URL embebida de YouTube se centraliza en `LIVE_SIGNAL_URL` dentro de `pages/index.js`; durante la jornada se puede reemplazar manualmente y desplegar de inmediato.
@@ -278,6 +286,7 @@ Opciones recomendadas:
 Recomendacion:
 
 - si el objetivo es simplicidad operativa, usar Vercel Cron + `ELECTION_INGEST_START_AT`;
+- mientras no se reactive cron, el sistema debe seguir mostrando estado previo a jornada y conservar solo los catalogos y configuracion de segunda vuelta.
 - si se necesita frecuencia exacta distinta de 60 segundos, pausas finas o alertas, usar n8n/EasyPanel.
 
 Configuracion operativa acordada al cierre del 2026-05-31:
