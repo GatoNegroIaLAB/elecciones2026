@@ -12,7 +12,7 @@ const TOP_CARD_LABELS = ['Candidatos a segunda vuelta', 'Candidatos a segunda vu
 
 const CANDIDATES = {
   '00026': { name: 'Iván Cepeda Castro', party: 'Movimiento Político Pacto Histórico', color: '#6B2D8B', image: driveImage('1foKgArgt66Wn70f_t85-DiOc9JrCotAZ') },
-  '01003': { name: 'Abelardo De La Espriella', party: 'Defensores de la Patria', color: '#1E4D8C', image: driveImage('1N5ReM7XbzwA77aGK8j7WACeD2U7QjUC9') },
+  '01003': { name: 'Abelardo De La Espriella', party: 'Defensores de la Patria', color: '#DA7100', image: driveImage('1N5ReM7XbzwA77aGK8j7WACeD2U7QjUC9') },
 }
 const FALLBACK_CANDIDATES = ['00026', '01003'].map(code => ({
   code,
