@@ -62,6 +62,9 @@ Valor operativo vigente al cierre de jornada:
   - seleccionar carpeta con `REGISTRADURIA_BASICS_DIR`
   - seleccionar encoding con `REGISTRADURIA_BASICS_ENCODING`
   - omitir `DIVIPOL` si no existe en la carpeta de carga
+- Fuente operativa explicita antes de jornada:
+  - `data/registraduria-basics/v04`
+  - si no se envia `REGISTRADURIA_BASICS_DIR`, el importador ya toma `v04` como snapshot bundled por defecto
 - Los básicos versionados en el repo viven en:
   - `data/registraduria-basics/v02` — primera vuelta
   - `data/registraduria-basics/v03` — segunda vuelta, primer corte
