@@ -64,7 +64,11 @@ Fecha: 2026-06-11 (hora de Colombia)
   - `pr_results = 0`
   - `pr_sync_state.status = idle`
 - Los archivos basicos nuevos llegaron en `iso-8859-1`; el importador del repo ya fue ajustado para soportar ese encoding.
-- `DIVIPOL` no se versiona en `v03` dentro del repo porque no hace parte del runtime minimo, pero el importador ya puede leerlo desde una carpeta externa si se necesita cargarlo.
+- En la revision del 2026-06-17 sobre los ZIP `v4` entregados por Registraduria se confirmo:
+  - `CANDIDATOS` y `PARTIDOS` mantienen los mismos codigos y filas de segunda vuelta, pero corrigen acentos frente al `v03` versionado.
+  - `CIRCUNSCRIPCION` y `CORPORACION` no cambian.
+  - `DIVIPOL` coincide byte por byte con `data/registraduria-basics/v02/DIVIPOL.txt`.
+- A partir de esa revision se versiono `data/registraduria-basics/v04` como nuevo snapshot de basicos de segunda vuelta.
 - La fecha de arranque configurada para segunda vuelta quedo alineada a:
   - `2026-06-21T16:00:00-05:00` para `NEXT_PUBLIC_RESULTS_AUTO_REFRESH_START_AT`
   - `2026-06-21T16:00:00-05:00` para `ELECTION_INGEST_START_AT`
