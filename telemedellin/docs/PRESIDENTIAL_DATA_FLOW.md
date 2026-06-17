@@ -189,6 +189,7 @@ Revision adicional del 2026-06-17 sobre los ZIP `v4` entregados por Registraduri
 - `CIRCUNSCRIPCION` y `CORPORACION` no cambian.
 - `DIVIPOL` coincide con el `DIVIPOL` ya versionado en `v02`.
 - El repo ya conserva ese snapshot como `data/registraduria-basics/v04`.
+- La proxima importacion pre-jornada debe tomar `v04` como fuente bundled explicita salvo que Registraduria entregue un paquete mas reciente.
 
 La ingesta no debe asumir que `0000` sera siempre el ultimo indice. En cada ejecucion consulta el ultimo avance conocido en `pr_sync_state` y prueba los siguientes indices secuenciales hasta encontrar el primer `404`. El ultimo indice existente es el que se procesa.
 
