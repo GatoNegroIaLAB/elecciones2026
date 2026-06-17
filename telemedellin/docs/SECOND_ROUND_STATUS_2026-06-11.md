@@ -61,6 +61,17 @@ Para soportarlo:
 - se ajustó `scripts/import-registraduria-basics.mjs`
 - se versionaron los básicos nuevos en `data/registraduria-basics/v03`
 
+Actualización posterior revisada el 2026-06-17:
+
+- Registraduría entregó un nuevo paquete de básicos identificado operativamente como `v4`.
+- Ese paquete mantiene el mismo catálogo de segunda vuelta.
+- La diferencia real frente al `v03` versionado es:
+  - `CANDIDATOS` corrige `IVÁN`
+  - `PARTIDOS` corrige `MOVIMIENTO POLÍTICO PACTO HISTÓRICO`
+  - `CIRCUNSCRIPCION` y `CORPORACION` no cambian
+  - `DIVIPOL` coincide con el `v02` ya versionado
+- A partir de esa revisión se creó `data/registraduria-basics/v04`.
+
 Catálogo operativo actual:
 
 - `00026` — Movimiento Político Pacto Histórico
@@ -149,6 +160,7 @@ Código:
 Datos y migraciones:
 
 - `data/registraduria-basics/v03`
+- `data/registraduria-basics/v04`
 - `supabase/migrations/20260611150000_prepare_second_round_reset.sql`
 - `supabase/migrations/20260611153000_load_second_round_basics.sql`
 - `supabase/migrations/20260611173000_fix_runoff_party_color.sql`
