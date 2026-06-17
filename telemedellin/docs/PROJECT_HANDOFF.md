@@ -69,6 +69,7 @@ Fecha: 2026-06-11 (hora de Colombia)
   - `CIRCUNSCRIPCION` y `CORPORACION` no cambian.
   - `DIVIPOL` coincide byte por byte con `data/registraduria-basics/v02/DIVIPOL.txt`.
 - A partir de esa revision se versiono `data/registraduria-basics/v04` como nuevo snapshot de basicos de segunda vuelta.
+- Decision operativa: `v04` queda como fuente explicita por defecto para la proxima carga/importacion pre-jornada.
 - La fecha de arranque configurada para segunda vuelta quedo alineada a:
   - `2026-06-21T16:00:00-05:00` para `NEXT_PUBLIC_RESULTS_AUTO_REFRESH_START_AT`
   - `2026-06-21T16:00:00-05:00` para `ELECTION_INGEST_START_AT`
