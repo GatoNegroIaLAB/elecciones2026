@@ -64,8 +64,13 @@ Valor operativo vigente al cierre de jornada:
   - omitir `DIVIPOL` si no existe en la carpeta de carga
 - Los básicos versionados en el repo viven en:
   - `data/registraduria-basics/v02` — primera vuelta
-  - `data/registraduria-basics/v03` — segunda vuelta
+  - `data/registraduria-basics/v03` — segunda vuelta, primer corte
+  - `data/registraduria-basics/v04` — segunda vuelta, actualización recibida el 2026-06-11 y revisada el 2026-06-17
 - Los archivos oficiales de segunda vuelta entregados por Registraduría llegaron en `iso-8859-1`, no en `utf-8`.
+- Hallazgo de revisión `v04`:
+  - `CANDIDATOS` y `PARTIDOS` corrigen acentos respecto al `v03` versionado
+  - `CIRCUNSCRIPCION` y `CORPORACION` no cambian
+  - `DIVIPOL` coincide con el `v02` ya versionado en el repo
 
 ### 3. Desarrollo local
 ```bash
