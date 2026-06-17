@@ -5,6 +5,7 @@ import { createClient } from '@supabase/supabase-js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootDir = path.resolve(__dirname, '..')
+const DEFAULT_BUNDLED_BASICS_VERSION = 'v04'
 const PARTY_COLORS = {
   '00009': '#1A3A6B',
   '00015': '#4A9A5A',
@@ -58,6 +59,11 @@ function resolveBundledBasicsDir() {
   const baseDir = path.join(rootDir, 'data', 'registraduria-basics')
   if (!fs.existsSync(baseDir)) {
     throw new Error(`Missing bundled basics directory: ${baseDir}`)
+  }
+
+  const explicitDefaultDir = path.join(baseDir, DEFAULT_BUNDLED_BASICS_VERSION)
+  if (fs.existsSync(explicitDefaultDir)) {
+    return explicitDefaultDir
   }
 
   const versions = fs.readdirSync(baseDir, { withFileTypes: true })
