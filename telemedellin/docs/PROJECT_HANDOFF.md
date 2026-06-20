@@ -73,7 +73,12 @@ Fecha: 2026-06-11 (hora de Colombia)
 - La fecha de arranque configurada para segunda vuelta quedo alineada a:
   - `2026-06-21T16:00:00-05:00` para `NEXT_PUBLIC_RESULTS_AUTO_REFRESH_START_AT`
   - `2026-06-21T16:00:00-05:00` para `ELECTION_INGEST_START_AT`
-- `vercel.json` sigue sin cron activo; la reactivacion se debe hacer explicitamente antes de jornada.
+- `vercel.json` queda reactivado con cron por minuto hacia `/api/cron-ingest-registraduria`.
+- Verificacion real de production el 2026-06-20:
+  - `GET /api/cron-ingest-registraduria` con `CRON_SECRET` respondio `skipped=true`
+  - `reason=before_start`
+  - `ingest_start_at=2026-06-21T21:00:00.000Z`
+  - conclusion: el gate real de Vercel ya esta listo para abrir el **2026-06-21 a las 16:00 America/Bogota**
 - El color oficial de `Defensores de la Patria / Abelardo De La Espriella` quedo corregido a `#DA7100` en frontend, importador y Supabase.
 - La documentacion detallada de esta fase vive tambien en `docs/SECOND_ROUND_STATUS_2026-06-11.md`.
 
@@ -175,8 +180,8 @@ Nota: las credenciales reales no deben quedar en GitHub ni en documentacion.
 
 ## Pendiente inmediato
 
-1. Definir si el encendido automatico de segunda vuelta se reactivara con cron de Vercel o con otro orquestador.
-2. Hacer una verificacion corta de fuente real de Registraduria cuando se acerque la jornada de segunda vuelta.
+1. Hacer una verificacion corta entre `2026-06-21 16:00` y `2026-06-21 16:05` hora Colombia para confirmar que el cron ya comenzo a consultar fuente real sin errores.
+2. Hacer una verificacion corta de fuente real de Registraduria si aparece un simulacro o un nuevo corte antes de la apertura oficial.
 3. Dar acceso a la integracion de Notion sobre `TM_Elecciones` si se quiere actualizar la ficha desde Loki; al cierre, el conector devuelve `object_not_found`.
 
 ## Simulacro 2026-05-27
@@ -199,9 +204,9 @@ Nota: las credenciales reales no deben quedar en GitHub ni en documentacion.
 - El endpoint de simulacion nunca debe quedar activo durante operacion normal.
 - Cambios de variables en Vercel requieren redeploy para afectar el runtime activo.
 - Tras el cierre de primera vuelta, el proyecto quedo en transicion controlada hacia segunda vuelta:
-  - `vercel.json` sigue sin cron activo
+  - `vercel.json` vuelve a tener cron activo por minuto
   - Supabase ya no conserva los resultados anteriores en `pr_*`
   - el frontend ya no muestra una tercera card
   - el layout desktop ya no apila `Votacion por ciudades` debajo de `Avance nacional`; ahora vive en una fila propia
-  - el nuevo encendido de jornada debe programarse de forma explicita cuando se defina la operacion de segunda vuelta
+  - el nuevo encendido de jornada ya quedo programado para el 2026-06-21 a las 16:00 America/Bogota
 - Si aparece un error de ingesta durante jornada, revisar primero `pr_sync_state.last_error`, luego logs de Vercel y logs de Postgres en Supabase.
