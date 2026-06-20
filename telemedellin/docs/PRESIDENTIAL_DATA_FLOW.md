@@ -12,7 +12,7 @@ Registraduria -> Ingesta Vercel -> Supabase pr_* -> API Vercel -> Web
 
 La ingesta automatica ya queda versionada y validada en comportamiento previo a jornada. La ejecucion real sigue protegida por fecha y token privado.
 
-Estado actual: primera vuelta cerrada, tablas `pr_*` reseteadas para segunda vuelta, basicos oficiales de segunda vuelta ya cargados en Supabase, variables reales de jornada alineadas al 2026-06-21 16:00 COT y cron aun desactivado hasta reactivacion explicita.
+Estado actual: primera vuelta cerrada, tablas `pr_*` reseteadas para segunda vuelta, basicos oficiales de segunda vuelta ya cargados en Supabase, variables reales de jornada alineadas al 2026-06-21 16:00 COT y cron reactivado en `vercel.json`, todavia bloqueado por fecha hasta esa hora.
 
 ## Servicios
 
@@ -42,6 +42,7 @@ Estas variables viven en Vercel Production. No deben commitearse ni documentarse
 Valores operativos ya alineados para segunda vuelta:
 
 - `NEXT_PUBLIC_RESULTS_AUTO_REFRESH_START_AT=2026-06-21T16:00:00-05:00`
+- `ENABLE_ELECTION_INGEST_CRON=true`
 - `ELECTION_INGEST_START_AT=2026-06-21T16:00:00-05:00`
 
 ## Endpoints propios
@@ -90,16 +91,16 @@ Comportamiento:
 - si `ENABLE_ELECTION_INGEST_CRON=false`, responde `200` con `skipped=true`;
 - si `ELECTION_INGEST_START_AT` esta en el futuro, responde `200` con `skipped=true`;
 - cuando ambas condiciones permiten jornada, ejecuta la misma ingesta real de `POST /api/ingest-registraduria`.
-- al cierre total del escrutinio, `vercel.json` quedo sin cron activo para conservar el ultimo corte recibido.
+- para la segunda vuelta, `vercel.json` vuelve a programar este endpoint cada minuto.
 
-Prueba real ejecutada el 2026-05-29:
+Prueba real ejecutada el 2026-06-20 sobre production:
 
 ```json
 {
   "ok": true,
   "skipped": true,
   "reason": "before_start",
-  "ingest_start_at": "2026-05-31T21:00:00.000Z"
+  "ingest_start_at": "2026-06-21T21:00:00.000Z"
 }
 ```
 
@@ -285,23 +286,12 @@ curl https://elecciones2026-beta.vercel.app/api/results-live
 
 La automatizacion ya puede quedar desplegada sin activarse antes de tiempo.
 
-Opciones recomendadas:
+Configuracion operativa vigente para segunda vuelta:
 
-- Vercel Cron versionado en `vercel.json`, llamando `/api/cron-ingest-registraduria` cada hora al cierre de jornada.
-- Cron externo controlado desde n8n/EasyPanel con header `Authorization`.
-- Job temporal en servidor propio durante la jornada.
-
-Recomendacion:
-
-- si el objetivo es simplicidad operativa, usar Vercel Cron + `ELECTION_INGEST_START_AT`;
-- mientras no se reactive cron, el sistema debe seguir mostrando estado previo a jornada y conservar solo los catalogos y configuracion de segunda vuelta.
-- si se necesita frecuencia exacta distinta de 60 segundos, pausas finas o alertas, usar n8n/EasyPanel.
-
-Configuracion operativa acordada al cierre del 2026-05-31:
-
-- Inicio de jornada automatizada: `2026-05-31T16:00:00-05:00` (domingo 31 de mayo de 2026, 4:00 p. m. hora de Colombia).
-- Ingesta por Vercel Cron: cada `1` hora.
-- Refresco visible del frontend: cada `1` hora.
+- Vercel Cron versionado en `vercel.json`, llamando `/api/cron-ingest-registraduria` cada minuto.
+- Inicio de jornada automatizada: `2026-06-21T16:00:00-05:00` (domingo 21 de junio de 2026, 4:00 p. m. hora de Colombia).
+- El runtime de server sigue bloqueando ejecucion antes de esa hora aunque el cron ya este desplegado.
+- El refresco visible del frontend sigue gobernado por `NEXT_PUBLIC_RESULTS_REFRESH_MS`.
 
 ## Documento de referencia operativa
 
