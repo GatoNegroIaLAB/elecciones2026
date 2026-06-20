@@ -18,12 +18,16 @@ App Next.js para visualización de resultados electorales en tiempo real, conect
 - El 2026-06-11 se hizo el corte de primera vuelta para reconvertir el sistema a **segunda vuelta presidencial**.
 - Se eliminaron de `pr_*` los boletines, resultados y catálogos de primera vuelta.
 - Supabase queda cargado con los básicos oficiales de segunda vuelta: **2 partidos** y **2 candidatos**.
-- El cron de Vercel sigue retirado por ahora; la próxima reactivación se debe hacer explícitamente cuando se defina la nueva jornada.
+- El cron de Vercel queda reactivado en `vercel.json` para segunda vuelta, consultando `/api/cron-ingest-registraduria` cada minuto.
 - La landing quedó simplificada para segunda vuelta: dos cards principales, copy dedicado y catálogos alineados al nuevo tarjetón.
 - La fecha operativa ya programada para segunda vuelta es **domingo 21 de junio de 2026, 4:00 p. m. hora Colombia**.
 - Las variables reales de Vercel ya quedaron alineadas con ese arranque:
   - `NEXT_PUBLIC_RESULTS_AUTO_REFRESH_START_AT=2026-06-21T16:00:00-05:00`
   - `ELECTION_INGEST_START_AT=2026-06-21T16:00:00-05:00`
+  - `ENABLE_ELECTION_INGEST_CRON=true`
+- Verificación operativa hecha el 2026-06-20:
+  - `GET /api/cron-ingest-registraduria` en production responde `skipped=true` con `reason=before_start`
+  - eso confirma que la compuerta temporal ya está lista para abrir mañana, **2026-06-21 a las 4:00 p. m. hora Colombia**
 - El layout desktop vigente se reorganizó para dos candidatos:
   - fila superior con `Candidatos en segunda vuelta` y `Avance nacional`
   - fila inferior con `Votación por ciudades` a ancho completo
@@ -50,10 +54,11 @@ Copia `.env.local.example` a `.env.local` y completa:
 - `ENABLE_ELECTION_INGEST_CRON` — Habilita o apaga la ingesta automática
 - `ELECTION_INGEST_START_AT` — Inicio real permitido para la ingesta automática
 
-Valor operativo vigente al cierre de jornada:
+Valor operativo previsto para la segunda vuelta:
 
 - `NEXT_PUBLIC_RESULTS_REFRESH_MS=3600000`
 - `NEXT_PUBLIC_RESULTS_AUTO_REFRESH_START_AT=2026-06-21T16:00:00-05:00`
+- `ENABLE_ELECTION_INGEST_CRON=true`
 - `ELECTION_INGEST_START_AT=2026-06-21T16:00:00-05:00`
 
 ### Básicos de Registraduría
@@ -113,10 +118,10 @@ Authorization: Bearer <CRON_SECRET>
 
 Si la jornada no ha empezado o la automatización está apagada, responde `200` con `skipped=true`.
 
-Estado vigente al cierre del escrutinio:
+Estado vigente previo a jornada de segunda vuelta:
 
-- `vercel.json` ya no define crons activos para este proyecto
-- la ingesta automatica quedo deshabilitada para conservar el ultimo corte oficial
+- `vercel.json` vuelve a definir cron activo para este proyecto
+- la compuerta temporal de runtime sigue evitando ejecuciones antes del `2026-06-21T16:00:00-05:00`
 
 ### `GET /api/proxy-boletin?url=<URL>`
 Descarga y descomprime un boletín `.json.gz` de la Registraduría.
