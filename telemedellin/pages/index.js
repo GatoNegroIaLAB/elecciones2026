@@ -8,7 +8,7 @@ const LIVE_SIGNAL_URL = 'https://www.youtube.com/embed/7zipc1y5uvU?autoplay=1&mu
 const DEFAULT_COLOR = '#64748b'
 const TELEMEDELLIN_ORANGE = '#F1AA41'
 const driveImage = id => `https://lh3.googleusercontent.com/d/${id}=s640`
-const TOP_CARD_LABELS = ['Candidatos a segunda vuelta', 'Candidatos a segunda vuelta']
+const TOP_CARD_LABELS = ['Presidente y Vicepresidente', 'Curul en el senado y cámara']
 
 const CANDIDATES = {
   '00026': { name: 'Iván Cepeda Castro', party: 'Movimiento Político Pacto Histórico', color: '#6B2D8B', image: driveImage('1foKgArgt66Wn70f_t85-DiOc9JrCotAZ') },
