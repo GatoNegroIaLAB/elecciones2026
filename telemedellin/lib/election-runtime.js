@@ -1,4 +1,4 @@
-const DEFAULT_RESULTS_REFRESH_MS = 3600000
+const DEFAULT_RESULTS_REFRESH_MS = 70000
 const SECOND_ROUND_DEFAULT_START_AT = '2026-06-21T16:00:00-05:00'
 
 function parsePositiveInt(value, fallback) {
@@ -24,10 +24,7 @@ function isTruthy(value) {
 
 export function getPublicElectionRuntime(now = new Date()) {
   const current = now instanceof Date ? now : new Date(now)
-  const refreshMs = Math.max(
-    parsePositiveInt(process.env.NEXT_PUBLIC_RESULTS_REFRESH_MS, DEFAULT_RESULTS_REFRESH_MS),
-    DEFAULT_RESULTS_REFRESH_MS
-  )
+  const refreshMs = parsePositiveInt(process.env.NEXT_PUBLIC_RESULTS_REFRESH_MS, DEFAULT_RESULTS_REFRESH_MS)
   const autoRefreshStartAt = resolveSecondRoundStartAt(
     parseDate(process.env.NEXT_PUBLIC_RESULTS_AUTO_REFRESH_START_AT)
   )
