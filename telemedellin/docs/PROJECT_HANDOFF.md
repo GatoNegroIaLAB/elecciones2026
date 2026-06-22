@@ -1,6 +1,6 @@
 # Elecciones 2026 - Handoff operativo
 
-Fecha: 2026-06-11 (hora de Colombia)
+Fecha: 2026-06-22 (hora de Colombia)
 
 ## Fuente del proyecto
 
@@ -22,6 +22,7 @@ Fecha: 2026-06-11 (hora de Colombia)
 - Root Directory correcto en Vercel: `telemedellin`.
 - Flujo activo: `Registraduria -> /api/ingest-registraduria -> Supabase pr_* -> /api/results-live -> Web`.
 - Estado vigente tras el corte de primera vuelta: sistema reconvertido para segunda vuelta, con reset de `pr_*`, dos candidatos oficiales cargados y frontend simplificado a dos cards principales.
+- Estado vigente post-jornada de segunda vuelta: ultimo corte congelado en `99.99%`, cron apagado en `vercel.json` y landing sirviendo el ultimo snapshot persistido en Supabase.
 - Referencia horaria operativa: siempre `America/Bogota`.
 
 ## Servicios conectados
@@ -82,10 +83,38 @@ Fecha: 2026-06-11 (hora de Colombia)
 - El color oficial de `Defensores de la Patria / Abelardo De La Espriella` quedo corregido a `#DA7100` en frontend, importador y Supabase.
 - La documentacion detallada de esta fase vive tambien en `docs/SECOND_ROUND_STATUS_2026-06-11.md`.
 
+## Actualizacion 2026-06-21 y 2026-06-22 - Jornada real y cierre
+
+- El domingo 2026-06-21 corrio la jornada real de segunda vuelta con:
+  - Vercel Cron cada `1` minuto hacia `/api/cron-ingest-registraduria`
+  - frontend refrescando `/api/results-live` cada `70` segundos
+  - hora de arranque efectiva: `2026-06-21 16:00:00 America/Bogota`
+- Durante la jornada:
+  - la cadena `Registraduria -> Vercel -> Supabase -> /api/results-live -> landing` se mantuvo sana
+  - se hicieron varias rotaciones manuales de la senal de YouTube editando `LIVE_SIGNAL_URL` en `pages/index.js`
+  - se corrigio el runtime de frontend para que el refresh visible respetara `70000 ms` en vez de quedar forzado a `1 hora`
+  - se ajustaron los rotulos de las dos cards principales a:
+    - `Presidente y Vicepresidente`
+    - `Curul en el senado y camara`
+- Verificaciones operativas registradas:
+  - revision de las `16:05` COT: arranque real funcionando
+  - revision de las `16:32` COT: API publica y Supabase sanos
+  - revision de las `17:05` COT: fuente real, indice y API publica sanos
+- Hallazgo de jornada:
+  - se observo un `404` transitorio de Registraduria al publicar uno de los primeros indices
+  - se resolvio sin intervencion manual
+- Cierre del 2026-06-22:
+  - se acepto `99.99%` como ultimo corte suficiente
+  - se apago el cron quitando el bloque `crons` de `telemedellin/vercel.json`
+  - commit de cierre: `a708cd9cb1a84b70edd7e8e487472564f671408f`
+  - deployment de cierre: `dpl_4AWoEAwesAAuTHtAnjNztp9TzEmr`
+  - estado esperado final: no mas consultas automaticas a Registraduria
+
 ## Documentacion tecnica
 
 - Estado de alistamiento al 2026-05-29: `docs/ELECTION_READINESS_2026-05-29.md`.
 - Bitacora del dia de elecciones al 2026-05-31: `docs/ELECTION_DAY_OPERATIONS_2026-05-31.md`.
+- Bitacora de jornada real de segunda vuelta: `docs/ELECTION_DAY_OPERATIONS_2026-06-21.md`.
 - Flujo completo: `docs/PRESIDENTIAL_DATA_FLOW.md`.
 - Migracion Supabase: `supabase/migrations/20260526163000_presidential_results_schema.sql`.
 - Soporte voto en blanco: `supabase/migrations/20260526182500_add_blank_vote_support.sql`.
@@ -108,8 +137,7 @@ Fecha: 2026-06-11 (hora de Colombia)
 ## Landing actual
 
 - Fuente de datos frontend: `GET /api/results-live`.
-- Antes de jornada, el badge muestra la programacion de actualizacion para el domingo 21 de junio de 2026 a las 4:00 p. m. hora Colombia.
-- El refresco automatico visible no debe arrancar antes de `NEXT_PUBLIC_RESULTS_AUTO_REFRESH_START_AT`.
+- Durante la jornada, el refresco automatico visible corrio cada `70` segundos.
 - Boton manual de actualizacion: eliminado para evitar recargas agresivas de usuarios.
 - Fotos de candidatos: se cargan desde URLs publicas optimizadas de Google Drive (`lh3.googleusercontent.com`) configuradas en `pages/index.js`; no se commitean binarios pesados al repo.
 - Voto en blanco: se muestra en la card de avance nacional, separado del ranking de candidatos.
@@ -121,6 +149,7 @@ Fecha: 2026-06-11 (hora de Colombia)
 - Card adicional: `Votacion por ciudades`, con Medellin, Bogota, Cali y Barranquilla.
 - Comportamiento previo a jornada del mapa: todos los departamentos en naranja Telemedellin cuando no hay votos ni mesas reportadas.
 - Copy vigente de bloque lateral/listado: `Candidatos en segunda vuelta`.
+- Estado post-jornada: el sitio debe seguir sirviendo el ultimo snapshot de Supabase sin nuevas consultas automaticas.
 
 ### Orden mobile
 
@@ -141,8 +170,8 @@ Fecha: 2026-06-11 (hora de Colombia)
 
 ### Cards principales
 
-- Card 1: `Candidatos a segunda vuelta`.
-- Card 2: `Candidatos a segunda vuelta`.
+- Card 1: `Presidente y Vicepresidente`.
+- Card 2: `Curul en el senado y camara`.
 - Sin iconos en los rotulos.
 - Porcentaje arriba y numero de votos debajo, para no pisar la foto.
 
@@ -177,11 +206,15 @@ Nota: las credenciales reales no deben quedar en GitHub ni en documentacion.
 - Revision de las 16:32 COT: API publica sana, Supabase sano, indice ya en `0005`.
 - Revision de las 17:05 COT: API publica sana, Supabase sano, Registraduria `200`, indice ya en `0012`.
 - El usuario reporto avance aproximado de `99.95%` al cierre de jornada; con eso se redujo la cadencia operativa a 1 hora.
+- Cierre operativo del 2026-06-22:
+  - ultimo corte visible aceptado: `99.99%`
+  - cron ya apagado en `vercel.json`
+  - Vercel production ya no debe seguir consultando automaticamente la Registraduria
 
 ## Pendiente inmediato
 
-1. Hacer una verificacion corta entre `2026-06-21 16:00` y `2026-06-21 16:05` hora Colombia para confirmar que el cron ya comenzo a consultar fuente real sin errores.
-2. Hacer una verificacion corta de fuente real de Registraduria si aparece un simulacro o un nuevo corte antes de la apertura oficial.
+1. Si en el futuro se reabre la operacion en vivo, volver a declarar `crons` en `vercel.json` y desplegar.
+2. Si cambia la senal de YouTube, editar `LIVE_SIGNAL_URL` en `pages/index.js` y desplegar.
 3. Dar acceso a la integracion de Notion sobre `TM_Elecciones` si se quiere actualizar la ficha desde Loki; al cierre, el conector devuelve `object_not_found`.
 
 ## Simulacro 2026-05-27
@@ -204,9 +237,13 @@ Nota: las credenciales reales no deben quedar en GitHub ni en documentacion.
 - El endpoint de simulacion nunca debe quedar activo durante operacion normal.
 - Cambios de variables en Vercel requieren redeploy para afectar el runtime activo.
 - Tras el cierre de primera vuelta, el proyecto quedo en transicion controlada hacia segunda vuelta:
-  - `vercel.json` vuelve a tener cron activo por minuto
+  - durante la jornada real `vercel.json` tuvo cron activo por minuto
   - Supabase ya no conserva los resultados anteriores en `pr_*`
   - el frontend ya no muestra una tercera card
   - el layout desktop ya no apila `Votacion por ciudades` debajo de `Avance nacional`; ahora vive en una fila propia
   - el nuevo encendido de jornada ya quedo programado para el 2026-06-21 a las 16:00 America/Bogota
+- Tras el cierre del 2026-06-22:
+  - `vercel.json` vuelve a quedar sin cron
+  - la landing depende del ultimo snapshot persistido en Supabase
+  - cualquier reactivacion futura del flujo debe ser deliberada y redeployada
 - Si aparece un error de ingesta durante jornada, revisar primero `pr_sync_state.last_error`, luego logs de Vercel y logs de Postgres en Supabase.
