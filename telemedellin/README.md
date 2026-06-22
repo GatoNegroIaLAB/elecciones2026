@@ -7,6 +7,7 @@ App Next.js para visualización de resultados electorales en tiempo real, conect
 - Estado general y handoff operativo: [`docs/PROJECT_HANDOFF.md`](docs/PROJECT_HANDOFF.md)
 - Flujo técnico presidencial: [`docs/PRESIDENTIAL_DATA_FLOW.md`](docs/PRESIDENTIAL_DATA_FLOW.md)
 - Estado detallado de segunda vuelta al 2026-06-11: [`docs/SECOND_ROUND_STATUS_2026-06-11.md`](docs/SECOND_ROUND_STATUS_2026-06-11.md)
+- Bitácora de jornada real de segunda vuelta 2026-06-21: [`docs/ELECTION_DAY_OPERATIONS_2026-06-21.md`](docs/ELECTION_DAY_OPERATIONS_2026-06-21.md)
 - Estado de alistamiento para jornada al 2026-05-29: [`docs/ELECTION_READINESS_2026-05-29.md`](docs/ELECTION_READINESS_2026-05-29.md)
 - Bitácora de operación del día de elecciones 2026-05-31: [`docs/ELECTION_DAY_OPERATIONS_2026-05-31.md`](docs/ELECTION_DAY_OPERATIONS_2026-05-31.md)
 
@@ -18,20 +19,21 @@ App Next.js para visualización de resultados electorales en tiempo real, conect
 - El 2026-06-11 se hizo el corte de primera vuelta para reconvertir el sistema a **segunda vuelta presidencial**.
 - Se eliminaron de `pr_*` los boletines, resultados y catálogos de primera vuelta.
 - Supabase queda cargado con los básicos oficiales de segunda vuelta: **2 partidos** y **2 candidatos**.
-- El cron de Vercel queda reactivado en `vercel.json` para segunda vuelta, consultando `/api/cron-ingest-registraduria` cada minuto.
+- La jornada real del domingo **2026-06-21** corrio con:
+  - ingesta real cada `1` minuto desde Vercel Cron
+  - refresco visible del frontend cada `70` segundos
 - La landing quedó simplificada para segunda vuelta: dos cards principales, copy dedicado y catálogos alineados al nuevo tarjetón.
-- La fecha operativa ya programada para segunda vuelta es **domingo 21 de junio de 2026, 4:00 p. m. hora Colombia**.
-- Las variables reales de Vercel ya quedaron alineadas con ese arranque:
-  - `NEXT_PUBLIC_RESULTS_AUTO_REFRESH_START_AT=2026-06-21T16:00:00-05:00`
-  - `ELECTION_INGEST_START_AT=2026-06-21T16:00:00-05:00`
-  - `ENABLE_ELECTION_INGEST_CRON=true`
-- Verificación operativa hecha el 2026-06-20:
-  - `GET /api/cron-ingest-registraduria` en production responde `skipped=true` con `reason=before_start`
-  - eso confirma que la compuerta temporal ya está lista para abrir mañana, **2026-06-21 a las 4:00 p. m. hora Colombia**
+- El cierre operativo posterior a jornada se hizo el **2026-06-22**:
+  - ultimo corte visible congelado: `99.99%` mesas informadas
+  - cron de Vercel ya apagado en `vercel.json`
+  - no se deben hacer mas consultas automaticas a Registraduria salvo decision explicita futura
 - El layout desktop vigente se reorganizó para dos candidatos:
   - fila superior con `Candidatos en segunda vuelta` y `Avance nacional`
   - fila inferior con `Votación por ciudades` a ancho completo
 - El color oficial de `Defensores de la Patria / Abelardo De La Espriella` quedó corregido a `#DA7100` tanto en frontend como en Supabase.
+- Los rótulos actuales de las cards principales quedaron en:
+  - `Presidente y Vicepresidente`
+  - `Curul en el senado y camara`
 
 ## Setup
 
@@ -54,12 +56,17 @@ Copia `.env.local.example` a `.env.local` y completa:
 - `ENABLE_ELECTION_INGEST_CRON` — Habilita o apaga la ingesta automática
 - `ELECTION_INGEST_START_AT` — Inicio real permitido para la ingesta automática
 
-Valor operativo previsto para la segunda vuelta:
+Valor operativo usado durante la jornada de segunda vuelta:
 
-- `NEXT_PUBLIC_RESULTS_REFRESH_MS=3600000`
+- `NEXT_PUBLIC_RESULTS_REFRESH_MS=70000`
 - `NEXT_PUBLIC_RESULTS_AUTO_REFRESH_START_AT=2026-06-21T16:00:00-05:00`
 - `ENABLE_ELECTION_INGEST_CRON=true`
 - `ELECTION_INGEST_START_AT=2026-06-21T16:00:00-05:00`
+
+Estado posterior al cierre del 2026-06-22:
+
+- el cron ya no se declara en `vercel.json`
+- si en el futuro se quiere volver a consultar Registraduria, hay que reintroducir el bloque `crons` y volver a desplegar
 
 ### Básicos de Registraduría
 
@@ -118,10 +125,11 @@ Authorization: Bearer <CRON_SECRET>
 
 Si la jornada no ha empezado o la automatización está apagada, responde `200` con `skipped=true`.
 
-Estado vigente previo a jornada de segunda vuelta:
+Estado vigente post-jornada:
 
-- `vercel.json` vuelve a definir cron activo para este proyecto
-- la compuerta temporal de runtime sigue evitando ejecuciones antes del `2026-06-21T16:00:00-05:00`
+- `vercel.json` ya no define cron para este proyecto
+- la ultima jornada automatica real ya termino
+- el endpoint sigue existiendo pero ya no debe ser invocado automaticamente desde Vercel
 
 ### `GET /api/proxy-boletin?url=<URL>`
 Descarga y descomprime un boletín `.json.gz` de la Registraduría.
